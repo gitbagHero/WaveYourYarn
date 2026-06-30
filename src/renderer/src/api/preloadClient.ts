@@ -14,6 +14,11 @@ const browserFallbackApi: WaveYourYarnApi = {
     ping: () => Promise.resolve({ success: true, data: 'browser-preview' })
   },
   auth: {
+    startWebLogin: () => unavailable(),
+    completeWebLogin: () => unavailable(),
+    loginWithCookie: () => unavailable(),
+    getLoginQr: () => unavailable(),
+    checkQrStatus: () => unavailable(),
     getLoginStatus: () => unavailable(),
     getCurrentUser: () => unavailable(),
     logout: () => unavailable()

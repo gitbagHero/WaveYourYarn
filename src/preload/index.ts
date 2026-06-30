@@ -7,6 +7,11 @@ const api: WaveYourYarnApi = {
     ping: () => ipcRenderer.invoke('app:ping')
   },
   auth: {
+    startWebLogin: () => ipcRenderer.invoke('auth:start-web-login'),
+    completeWebLogin: () => ipcRenderer.invoke('auth:complete-web-login'),
+    loginWithCookie: (cookie: string) => ipcRenderer.invoke('auth:login-with-cookie', cookie),
+    getLoginQr: () => ipcRenderer.invoke('auth:get-login-qr'),
+    checkQrStatus: (key: string) => ipcRenderer.invoke('auth:check-qr-status', key),
     getLoginStatus: () => ipcRenderer.invoke('auth:get-login-status'),
     getCurrentUser: () => ipcRenderer.invoke('auth:get-current-user'),
     logout: () => ipcRenderer.invoke('auth:logout')

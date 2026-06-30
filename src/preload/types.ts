@@ -1,4 +1,6 @@
 import type { IpcResult } from '../main/types/common'
+import type { LoginQrResult, LoginStatusResult, QrStatusResult } from '../main/types/auth'
+import type { UserProfile } from '../main/types/user'
 
 export interface WaveYourYarnApi {
   app: {
@@ -6,9 +8,14 @@ export interface WaveYourYarnApi {
     ping: () => Promise<IpcResult<string>>
   }
   auth: {
-    getLoginStatus: () => Promise<IpcResult>
-    getCurrentUser: () => Promise<IpcResult>
-    logout: () => Promise<IpcResult>
+    startWebLogin: () => Promise<IpcResult<void>>
+    completeWebLogin: () => Promise<IpcResult<LoginStatusResult>>
+    loginWithCookie: (cookie: string) => Promise<IpcResult<LoginStatusResult>>
+    getLoginQr: () => Promise<IpcResult<LoginQrResult>>
+    checkQrStatus: (key: string) => Promise<IpcResult<QrStatusResult>>
+    getLoginStatus: () => Promise<IpcResult<LoginStatusResult>>
+    getCurrentUser: () => Promise<IpcResult<UserProfile | null>>
+    logout: () => Promise<IpcResult<void>>
   }
   songs: {
     syncLikedSongs: () => Promise<IpcResult>

@@ -1,5 +1,8 @@
 export interface UserProfile {
-  userId: string
+  id: string
+  ncmUserId: string
   nickname: string
   avatarUrl?: string
+  createdAt: string
+  updatedAt: string
 }

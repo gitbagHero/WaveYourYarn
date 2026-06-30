@@ -1,8 +1,76 @@
 import { ipcMain } from 'electron'
-import { notImplemented } from '../utils/errors'
+import { AuthService } from '../services/AuthService'
+import { WebLoginService } from '../services/WebLoginService'
+import type { IpcResult } from '../types/common'
+import { toErrorMessage } from '../utils/errors'
+
+const authService = new AuthService()
+const webLoginService = new WebLoginService(authService)
 
 export function registerAuthIpc(): void {
-  ipcMain.handle('auth:get-login-status', () => notImplemented())
-  ipcMain.handle('auth:get-current-user', () => notImplemented())
-  ipcMain.handle('auth:logout', () => notImplemented())
+  ipcMain.handle('auth:start-web-login', async () =>
+    toIpcResult(() => webLoginService.openLoginWindow(), '网页登录窗口打开失败')
+  )
+
+  ipcMain.handle('auth:complete-web-login', async () =>
+    toIpcResult(() => webLoginService.completeLogin(), '网页登录验证失败')
+  )
+
+  ipcMain.handle('auth:login-with-cookie', async (_event, cookie: unknown) => {
+    if (typeof cookie !== 'string' || cookie.trim().length === 0) {
+      return {
+        success: false,
+        message: 'Cookie 不能为空',
+        error: 'INVALID_COOKIE'
+      } satisfies IpcResult
+    }
+
+    return toIpcResult(() => authService.loginWithCookie(cookie), 'Cookie 无效或已过期，请重新获取')
+  })
+
+  ipcMain.handle('auth:get-login-qr', async () =>
+    toIpcResult(() => authService.getLoginQr(), '二维码生成失败')
+  )
+
+  ipcMain.handle('auth:check-qr-status', async (_event, key: unknown) => {
+    if (typeof key !== 'string' || key.trim().length === 0) {
+      return {
+        success: false,
+        message: '二维码 key 不能为空',
+        error: 'INVALID_QR_KEY'
+      } satisfies IpcResult
+    }
+
+    return toIpcResult(() => authService.checkQrStatus(key), '二维码状态检查失败')
+  })
+
+  ipcMain.handle('auth:get-login-status', async () =>
+    toIpcResult(() => authService.getLoginStatus(), '登录状态检查失败')
+  )
+
+  ipcMain.handle('auth:get-current-user', async () =>
+    toIpcResult(() => authService.getCurrentUser(), '当前用户信息获取失败')
+  )
+
+  ipcMain.handle('auth:logout', async () =>
+    toIpcResult(async () => {
+      await authService.logout()
+      await webLoginService.clearLoginSession()
+    }, '退出登录失败')
+  )
+}
+
+async function toIpcResult<T>(operation: () => Promise<T>, fallbackMessage: string): Promise<IpcResult<T>> {
+  try {
+    return {
+      success: true,
+      data: await operation()
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: fallbackMessage,
+      error: toErrorMessage(error)
+    }
+  }
 }
