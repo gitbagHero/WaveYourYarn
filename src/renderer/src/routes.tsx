@@ -1,0 +1,23 @@
+import type { RouteObject } from 'react-router-dom'
+import { AppLayout } from './components/layout/AppLayout'
+import { DashboardPage } from './pages/DashboardPage'
+import { LoginPage } from './pages/LoginPage'
+import { LikedSongsPage } from './pages/LikedSongsPage'
+import { ExportPage } from './pages/ExportPage'
+import { SettingsPage } from './pages/SettingsPage'
+import { NotFoundPage } from './pages/NotFoundPage'
+
+export const routes: RouteObject[] = [
+  {
+    path: '/',
+    element: <AppLayout />,
+    children: [
+      { index: true, element: <DashboardPage /> },
+      { path: 'login', element: <LoginPage /> },
+      { path: 'liked-songs', element: <LikedSongsPage /> },
+      { path: 'export', element: <ExportPage /> },
+      { path: 'settings', element: <SettingsPage /> },
+      { path: '*', element: <NotFoundPage /> }
+    ]
+  }
+]
