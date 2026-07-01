@@ -6,5 +6,23 @@ export interface Song {
   album?: string
   duration?: number
   coverUrl?: string
-  orderIndex?: number
+  alias?: string[]
+  rawData?: unknown
+  createdAt: string
+  updatedAt: string
+}
+
+export interface LikedSong extends Song {
+  orderIndex: number
+  likedAt?: number
+}
+
+export interface SyncLikedSongsResult {
+  total: number
+  successCount: number
+  failedCount: number
+  failedSongIds: string[]
+  syncedAt: string
+  hasLikedAt: boolean
+  source: 'playlist_detail' | 'likelist_fallback'
 }

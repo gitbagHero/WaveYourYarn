@@ -7,10 +7,14 @@ export interface Song {
   duration?: number
   coverUrl?: string
   alias?: string[]
-  orderIndex?: number
   rawData?: unknown
   createdAt: string
   updatedAt: string
+}
+
+export interface LikedSong extends Song {
+  orderIndex: number
+  likedAt?: number
 }
 
 export interface SyncLikedSongsTask {
@@ -20,4 +24,14 @@ export interface SyncLikedSongsTask {
   successCount: number
   failedCount: number
   message?: string
+}
+
+export interface SyncLikedSongsResult {
+  total: number
+  successCount: number
+  failedCount: number
+  failedSongIds: string[]
+  syncedAt: string
+  hasLikedAt: boolean
+  source: 'playlist_detail' | 'likelist_fallback'
 }

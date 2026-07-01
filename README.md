@@ -2,7 +2,7 @@
 
 让你的音乐故事像声波一样荡漾开来。
 
-WaveYourYarn 是一个基于 Electron 的个人音乐数据工具平台，用于导出、分析、整理和迁移用户自己的音乐偏好数据。当前版本进入 v0.1.1，已经开始接入网易云扫码登录、登录态保存和用户信息读取。
+WaveYourYarn 是一个基于 Electron 的个人音乐数据工具平台，用于导出、分析、整理和迁移用户自己的音乐偏好数据。当前版本进入 v0.1.1，登录方案以 Electron 内置网页登录获取 Cookie 为主，手动 Cookie 导入作为高级兜底入口。
 
 ## Tech Stack
 
@@ -11,7 +11,7 @@ WaveYourYarn 是一个基于 Electron 的个人音乐数据工具平台，用于
 - Tailwind CSS
 - Zustand
 - SQLite via better-sqlite3
-- NeteaseCloudMusicApiEnhanced/api-enhanced adapter placeholder
+- NeteaseCloudMusicApiEnhanced/api-enhanced adapter
 
 ## Scripts
 
@@ -30,10 +30,10 @@ npm run db:init
 - Electron main/preload/renderer process split
 - Secure IPC bridge through preload
 - Basic app/version IPC implemented
-- Auth IPC channels for QR login, login status, current user, and logout
+- Auth IPC channels for web login, manual Cookie login, login status, current user, and logout
 - SQLite migration and repository/service scaffolding
 - SecureStorageService-backed local login state storage
-- Netease Cloud Music QR login adapter through `@neteasecloudmusicapienhanced/api`
+- Netease Cloud Music web login flow backed by `@neteasecloudmusicapienhanced/api`
 - React routes and login-aware initial pages
 - Tailwind-enabled desktop layout
 

@@ -5,6 +5,7 @@ import type { LoginMethod, LoginQrResult, LoginStatusResult, QrStatusResult } fr
 import type { UserProfile } from '../types/user'
 import { logger } from '../utils/logger'
 import { SecureStorageService } from './SecureStorageService'
+import { WebLoginService } from './WebLoginService'
 
 const NCM_COOKIE_KEY = 'ncm_cookie'
 const NCM_USER_ID_KEY = 'ncm_user_id'
@@ -15,6 +16,7 @@ export class AuthService {
   private readonly secureStorageService: SecureStorageService
   private readonly userRepository: UserRepository
   private readonly ncmAdapter: NCMAdapter
+  private readonly webLoginService: WebLoginService
 
   constructor(
     secureStorageService = new SecureStorageService(),
@@ -23,6 +25,7 @@ export class AuthService {
     this.secureStorageService = secureStorageService
     this.userRepository = userRepository
     this.ncmAdapter = new NCMAdapter(() => this.secureStorageService.getSecret(NCM_COOKIE_KEY))
+    this.webLoginService = new WebLoginService()
   }
 
   async getLoginQr(): Promise<LoginQrResult> {
@@ -98,6 +101,11 @@ export class AuthService {
     }
   }
 
+  async openWebLogin(): Promise<LoginStatusResult> {
+    const cookie = await this.webLoginService.openLoginWindow()
+    return this.loginWithWebCookie(cookie)
+  }
+
   async loginWithWebCookie(cookie: string): Promise<LoginStatusResult> {
     const user = await this.saveAuthenticatedCookie(cookie, 'web')
     return {
@@ -106,7 +114,7 @@ export class AuthService {
     }
   }
 
-  async verifyCookieLogin(cookie: string): Promise<UserProfile> {
+  async verifyCookieAndGetUser(cookie: string): Promise<UserProfile> {
     const normalizedCookie = normalizeCookie(cookie)
 
     if (!normalizedCookie) {
@@ -120,6 +128,14 @@ export class AuthService {
     }
 
     return user
+  }
+
+  async verifyCookieLogin(cookie: string): Promise<UserProfile> {
+    return this.verifyCookieAndGetUser(cookie)
+  }
+
+  async clearWebLoginSession(): Promise<void> {
+    await this.webLoginService.clearLoginSession()
   }
 
   async logout(): Promise<void> {

@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS playlist_songs (
   playlist_id TEXT NOT NULL,
   song_id TEXT NOT NULL,
   order_index INTEGER,
+  added_at INTEGER,
   created_at TEXT NOT NULL
 );
 
@@ -77,5 +78,20 @@ export function getDatabase(): Database.Database {
 export function initializeDatabase(): void {
   const db = getDatabase()
   db.exec(INIT_MIGRATION)
+  ensureColumn(db, 'playlist_songs', 'added_at', 'INTEGER')
   logger.info('SQLite database initialized')
+}
+
+function ensureColumn(
+  db: Database.Database,
+  tableName: string,
+  columnName: string,
+  columnDefinition: string
+): void {
+  const columns = db.prepare(`PRAGMA table_info(${tableName})`).all() as Array<{ name: string }>
+  const hasColumn = columns.some((column) => column.name === columnName)
+
+  if (!hasColumn) {
+    db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnDefinition}`)
+  }
 }

@@ -4,6 +4,7 @@ import { useAppStore } from '../stores/appStore'
 import { useEffect, useState } from 'react'
 import { appApi } from '../api/appApi'
 import { useAuthStore } from '../stores/authStore'
+import { useSongStore } from '../stores/songStore'
 
 const quickLinks = [
   { to: '/login', label: '连接网易云' },
@@ -15,14 +16,16 @@ const quickLinks = [
 export function DashboardPage(): JSX.Element {
   const version = useAppStore((state) => state.version)
   const { isLoggedIn, user, checkLoginStatus } = useAuthStore()
+  const { likedSongs, syncing, lastSyncResult, loadLikedSongs, syncLikedSongs } = useSongStore()
   const [ping, setPing] = useState('-')
 
   useEffect(() => {
     checkLoginStatus()
+    loadLikedSongs()
     appApi.ping().then((result) => {
       setPing(result.success ? (result.data ?? '-') : result.message ?? 'IPC failed')
     })
-  }, [checkLoginStatus])
+  }, [checkLoginStatus, loadLikedSongs])
 
   return (
     <div>
@@ -31,8 +34,11 @@ export function DashboardPage(): JSX.Element {
       <section className="grid gap-4 md:grid-cols-4">
         <Metric label="当前版本" value={version ? `v${version}` : '-'} />
         <Metric label="登录状态" value={isLoggedIn ? '网易云已连接' : '未连接'} />
-        <Metric label="喜欢歌曲数量" value="0" />
-        <Metric label="最近同步时间" value="尚未同步" />
+        <Metric label="喜欢歌曲数量" value={String(likedSongs.length)} />
+        <Metric
+          label="最近同步时间"
+          value={lastSyncResult ? formatDateTime(lastSyncResult.syncedAt) : '尚未同步'}
+        />
       </section>
 
       <section className="mt-6 rounded-md border bg-white p-6">
@@ -51,12 +57,14 @@ export function DashboardPage(): JSX.Element {
                 <h3 className="text-xl font-semibold">{user.nickname}</h3>
               </div>
             </div>
-            <Link
-              to="/liked-songs"
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+            <button
+              type="button"
+              disabled={syncing}
+              onClick={() => void syncLikedSongs()}
+              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              同步我喜欢的音乐
-            </Link>
+              {syncing ? '同步中...' : '同步我喜欢的音乐'}
+            </button>
           </div>
         ) : (
           <div className="flex items-center justify-between gap-4">
@@ -89,6 +97,12 @@ export function DashboardPage(): JSX.Element {
               {link.label}
             </Link>
           ))}
+          <Link
+            to="/liked-songs"
+            className="rounded-md border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            查看我喜欢的音乐
+          </Link>
         </div>
         <div className="mt-5 rounded-md bg-muted p-3 text-sm text-muted-foreground">
           IPC ping result: {ping}
@@ -105,4 +119,8 @@ function Metric({ label, value }: { label: string; value: string }): JSX.Element
       <p className="mt-2 text-xl font-semibold">{value}</p>
     </div>
   )
+}
+
+function formatDateTime(value: string): string {
+  return new Date(value).toLocaleString()
 }

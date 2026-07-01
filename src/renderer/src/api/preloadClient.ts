@@ -14,6 +14,7 @@ const browserFallbackApi: WaveYourYarnApi = {
     ping: () => Promise.resolve({ success: true, data: 'browser-preview' })
   },
   auth: {
+    openWebLogin: () => unavailable(),
     startWebLogin: () => unavailable(),
     completeWebLogin: () => unavailable(),
     loginWithCookie: () => unavailable(),
@@ -21,12 +22,14 @@ const browserFallbackApi: WaveYourYarnApi = {
     checkQrStatus: () => unavailable(),
     getLoginStatus: () => unavailable(),
     getCurrentUser: () => unavailable(),
-    logout: () => unavailable()
+    logout: () => unavailable(),
+    clearWebLoginSession: () => unavailable()
   },
   songs: {
     syncLikedSongs: () => unavailable(),
     getLikedSongs: () => unavailable(),
-    searchLikedSongs: () => unavailable()
+    searchLikedSongs: () => unavailable(),
+    clearLikedSongsCache: () => unavailable()
   },
   export: {
     exportCsv: () => unavailable(),

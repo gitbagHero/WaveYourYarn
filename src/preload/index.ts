@@ -7,6 +7,7 @@ const api: WaveYourYarnApi = {
     ping: () => ipcRenderer.invoke('app:ping')
   },
   auth: {
+    openWebLogin: () => ipcRenderer.invoke('auth:open-web-login'),
     startWebLogin: () => ipcRenderer.invoke('auth:start-web-login'),
     completeWebLogin: () => ipcRenderer.invoke('auth:complete-web-login'),
     loginWithCookie: (cookie: string) => ipcRenderer.invoke('auth:login-with-cookie', cookie),
@@ -14,12 +15,15 @@ const api: WaveYourYarnApi = {
     checkQrStatus: (key: string) => ipcRenderer.invoke('auth:check-qr-status', key),
     getLoginStatus: () => ipcRenderer.invoke('auth:get-login-status'),
     getCurrentUser: () => ipcRenderer.invoke('auth:get-current-user'),
-    logout: () => ipcRenderer.invoke('auth:logout')
+    logout: () => ipcRenderer.invoke('auth:logout'),
+    clearWebLoginSession: () => ipcRenderer.invoke('auth:clear-web-login-session')
   },
   songs: {
     syncLikedSongs: () => ipcRenderer.invoke('songs:sync-liked-songs'),
     getLikedSongs: () => ipcRenderer.invoke('songs:get-liked-songs'),
-    searchLikedSongs: (keyword: string) => ipcRenderer.invoke('songs:search-liked-songs', keyword)
+    searchLikedSongs: (keyword: string) =>
+      ipcRenderer.invoke('songs:search-liked-songs', typeof keyword === 'string' ? keyword : ''),
+    clearLikedSongsCache: () => ipcRenderer.invoke('songs:clear-liked-songs-cache')
   },
   export: {
     exportCsv: (options: unknown) => ipcRenderer.invoke('export:csv', options),
