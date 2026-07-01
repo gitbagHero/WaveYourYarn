@@ -77,6 +77,12 @@ export function LikedSongsPage(): JSX.Element {
             >
               刷新本地缓存
             </button>
+            <Link
+              to="/export"
+              className="rounded-md border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              前往导出
+            </Link>
           </div>
         </div>
 

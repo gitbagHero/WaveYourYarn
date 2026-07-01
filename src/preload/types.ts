@@ -2,6 +2,7 @@ import type { IpcResult } from '../main/types/common'
 import type { LoginQrResult, LoginStatusResult, QrStatusResult } from '../main/types/auth'
 import type { UserProfile } from '../main/types/user'
 import type { LikedSong, SyncLikedSongsResult } from '../main/types/song'
+import type { ExportOptions, ExportRecord, ExportResult } from '../main/types/export'
 
 export interface WaveYourYarnApi {
   app: {
@@ -27,10 +28,14 @@ export interface WaveYourYarnApi {
     clearLikedSongsCache: () => Promise<IpcResult<void>>
   }
   export: {
+    exportLikedSongs: (options: ExportOptions) => Promise<IpcResult<ExportResult>>
     exportCsv: (options: unknown) => Promise<IpcResult>
     exportJson: (options: unknown) => Promise<IpcResult>
     exportMarkdown: (options: unknown) => Promise<IpcResult>
-    getExportRecords: () => Promise<IpcResult>
+    getExportRecords: () => Promise<IpcResult<ExportRecord[]>>
+    openFile: (filePath: string) => Promise<IpcResult<void>>
+    openFolder: (filePath: string) => Promise<IpcResult<void>>
+    clearRecords: () => Promise<IpcResult<void>>
   }
   settings: {
     get: (key: string) => Promise<IpcResult>

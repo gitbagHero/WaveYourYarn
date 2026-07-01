@@ -56,6 +56,8 @@ CREATE TABLE IF NOT EXISTS export_records (
   export_type TEXT NOT NULL,
   file_path TEXT NOT NULL,
   song_count INTEGER NOT NULL,
+  scope TEXT,
+  sort_mode TEXT,
   created_at TEXT NOT NULL
 );
 
@@ -79,6 +81,8 @@ export function initializeDatabase(): void {
   const db = getDatabase()
   db.exec(INIT_MIGRATION)
   ensureColumn(db, 'playlist_songs', 'added_at', 'INTEGER')
+  ensureColumn(db, 'export_records', 'scope', 'TEXT')
+  ensureColumn(db, 'export_records', 'sort_mode', 'TEXT')
   logger.info('SQLite database initialized')
 }
 

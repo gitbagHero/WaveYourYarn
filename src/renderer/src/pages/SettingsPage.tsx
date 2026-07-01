@@ -4,18 +4,27 @@ import { authApi } from '../api/authApi'
 import { PageHeader } from '../components/common/PageHeader'
 import { useAppStore } from '../stores/appStore'
 import { useAuthStore } from '../stores/authStore'
+import { useExportStore } from '../stores/exportStore'
 import { useSongStore } from '../stores/songStore'
 
 export function SettingsPage(): JSX.Element {
   const version = useAppStore((state) => state.version)
   const { isLoggedIn, user, loading, error, logout } = useAuthStore()
   const { likedSongs, loading: songsLoading, error: songsError, loadLikedSongs, clearCache } = useSongStore()
+  const {
+    records,
+    loadingRecords,
+    error: exportError,
+    loadRecords,
+    clearRecords
+  } = useExportStore()
   const [sessionMessage, setSessionMessage] = useState<string | null>(null)
   const [cacheMessage, setCacheMessage] = useState<string | null>(null)
 
   useEffect(() => {
     loadLikedSongs()
-  }, [loadLikedSongs])
+    loadRecords()
+  }, [loadLikedSongs, loadRecords])
 
   const clearWebLoginSession = async (): Promise<void> => {
     setSessionMessage(null)
@@ -33,6 +42,16 @@ export function SettingsPage(): JSX.Element {
     setCacheMessage(null)
     await clearCache()
     setCacheMessage('本地歌曲缓存已清空')
+  }
+
+  const clearExportRecords = async (): Promise<void> => {
+    const confirmed = window.confirm('确认清空导出历史吗？这不会删除实际导出的文件。')
+
+    if (!confirmed) {
+      return
+    }
+
+    await clearRecords()
   }
 
   return (
@@ -63,10 +82,17 @@ export function SettingsPage(): JSX.Element {
               {songsLoading ? '读取中...' : `我喜欢的音乐 ${likedSongs.length} 首`}
             </dd>
           </div>
+          <div className="flex justify-between">
+            <dt className="text-muted-foreground">导出历史</dt>
+            <dd className="font-medium">
+              {loadingRecords ? '读取中...' : `${records.length} 条`}
+            </dd>
+          </div>
         </dl>
 
         {error ? <p className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
         {songsError ? <p className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{songsError}</p> : null}
+        {exportError ? <p className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{exportError}</p> : null}
 
         <div className="mt-6 flex flex-wrap gap-3">
           {isLoggedIn ? (
@@ -100,6 +126,14 @@ export function SettingsPage(): JSX.Element {
             className="rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             清空“我喜欢的音乐”缓存
+          </button>
+          <button
+            type="button"
+            disabled={loadingRecords || records.length === 0}
+            onClick={() => void clearExportRecords()}
+            className="rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            清空导出历史
           </button>
         </div>
         {sessionMessage ? <p className="mt-3 text-sm text-muted-foreground">{sessionMessage}</p> : null}

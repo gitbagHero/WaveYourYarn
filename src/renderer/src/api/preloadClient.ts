@@ -32,10 +32,14 @@ const browserFallbackApi: WaveYourYarnApi = {
     clearLikedSongsCache: () => unavailable()
   },
   export: {
+    exportLikedSongs: () => unavailable(),
     exportCsv: () => unavailable(),
     exportJson: () => unavailable(),
     exportMarkdown: () => unavailable(),
-    getExportRecords: () => unavailable()
+    getExportRecords: () => unavailable(),
+    openFile: () => unavailable(),
+    openFolder: () => unavailable(),
+    clearRecords: () => unavailable()
   },
   settings: {
     get: () => unavailable(),

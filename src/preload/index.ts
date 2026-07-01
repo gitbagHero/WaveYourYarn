@@ -26,10 +26,16 @@ const api: WaveYourYarnApi = {
     clearLikedSongsCache: () => ipcRenderer.invoke('songs:clear-liked-songs-cache')
   },
   export: {
+    exportLikedSongs: (options) => ipcRenderer.invoke('export:liked-songs', options),
     exportCsv: (options: unknown) => ipcRenderer.invoke('export:csv', options),
     exportJson: (options: unknown) => ipcRenderer.invoke('export:json', options),
     exportMarkdown: (options: unknown) => ipcRenderer.invoke('export:markdown', options),
-    getExportRecords: () => ipcRenderer.invoke('export:get-records')
+    getExportRecords: () => ipcRenderer.invoke('export:get-records'),
+    openFile: (filePath: string) =>
+      ipcRenderer.invoke('export:open-file', typeof filePath === 'string' ? filePath : ''),
+    openFolder: (filePath: string) =>
+      ipcRenderer.invoke('export:open-folder', typeof filePath === 'string' ? filePath : ''),
+    clearRecords: () => ipcRenderer.invoke('export:clear-records')
   },
   settings: {
     get: (key: string) => ipcRenderer.invoke('settings:get', key),
