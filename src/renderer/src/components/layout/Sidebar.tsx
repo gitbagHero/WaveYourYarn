@@ -8,6 +8,7 @@ const items = [
   { to: '/liked-songs', label: '我喜欢的音乐', icon: Heart },
   { to: '/playlists', label: '歌单', icon: ListMusic },
   { to: '/export', label: '数据导出', icon: Download },
+  { to: '/statistics', label: '数据统计', icon: BarChart3 },
   { to: '/settings', label: '设置', icon: Settings }
 ]
 

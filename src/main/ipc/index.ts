@@ -4,6 +4,7 @@ import { registerSongsIpc } from './songs.ipc'
 import { registerExportIpc } from './export.ipc'
 import { registerSettingsIpc } from './settings.ipc'
 import { registerPlaylistsIpc } from './playlists.ipc'
+import { registerStatisticsIpc } from './statistics.ipc'
 
 export function registerIpcHandlers(): void {
   registerAppIpc()
@@ -11,5 +12,6 @@ export function registerIpcHandlers(): void {
   registerSongsIpc()
   registerPlaylistsIpc()
   registerExportIpc()
+  registerStatisticsIpc()
   registerSettingsIpc()
 }

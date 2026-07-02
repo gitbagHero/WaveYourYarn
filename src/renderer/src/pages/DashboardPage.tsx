@@ -12,7 +12,8 @@ const quickLinks = [
   { to: '/liked-songs', label: '同步我喜欢的音乐' },
   { to: '/liked-songs', label: '查看歌曲列表' },
   { to: '/playlists', label: '查看歌单' },
-  { to: '/export', label: '导出歌曲数据' }
+  { to: '/export', label: '导出歌曲数据' },
+  { to: '/statistics', label: '查看数据统计' }
 ]
 
 export function DashboardPage(): JSX.Element {

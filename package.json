@@ -1,6 +1,6 @@
 {
   "name": "waveyouryarn",
-  "version": "0.1.0",
+  "version": "0.2.3",
   "description": "A desktop tool platform for exporting, analyzing, organizing, and migrating personal music preference data.",
   "main": "out/main/index.js",
   "type": "module",

@@ -4,6 +4,12 @@ import type { UserProfile } from '../main/types/user'
 import type { LikedSong, SyncLikedSongsResult } from '../main/types/song'
 import type { ExportOptions, ExportRecord, ExportResult } from '../main/types/export'
 import type {
+  MusicAnalysisDataset,
+  MusicStatsSummary,
+  StatisticsSource,
+  StatisticsSourceInfo
+} from '../main/types/statistics'
+import type {
   Playlist,
   PlaylistType,
   SyncAllPlaylistSongsResult,
@@ -62,6 +68,11 @@ export interface WaveYourYarnApi {
     openFile: (filePath: string) => Promise<IpcResult<void>>
     openFolder: (filePath: string) => Promise<IpcResult<void>>
     clearRecords: () => Promise<IpcResult<void>>
+  }
+  statistics: {
+    getSummary: (source: StatisticsSource) => Promise<IpcResult<MusicStatsSummary>>
+    getSources: () => Promise<IpcResult<StatisticsSourceInfo[]>>
+    getAnalysisDataset: (source: StatisticsSource) => Promise<IpcResult<MusicAnalysisDataset>>
   }
   settings: {
     get: (key: string) => Promise<IpcResult>

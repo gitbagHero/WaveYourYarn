@@ -65,6 +65,11 @@ const api: WaveYourYarnApi = {
       ipcRenderer.invoke('export:open-folder', typeof filePath === 'string' ? filePath : ''),
     clearRecords: () => ipcRenderer.invoke('export:clear-records')
   },
+  statistics: {
+    getSummary: (source) => ipcRenderer.invoke('statistics:get-summary', source),
+    getSources: () => ipcRenderer.invoke('statistics:get-sources'),
+    getAnalysisDataset: (source) => ipcRenderer.invoke('statistics:get-analysis-dataset', source)
+  },
   settings: {
     get: (key: string) => ipcRenderer.invoke('settings:get', key),
     set: (key: string, value: string) => ipcRenderer.invoke('settings:set', key, value),
