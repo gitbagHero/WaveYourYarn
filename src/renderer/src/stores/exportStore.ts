@@ -8,7 +8,9 @@ interface ExportState {
   records: ExportRecord[]
   error: string | null
   lastResult: ExportResult | null
+  exportSongs: (options: ExportOptions) => Promise<void>
   exportLikedSongs: (options: ExportOptions) => Promise<void>
+  exportPlaylistSongs: (playlistId: string, options: Omit<ExportOptions, 'source'>) => Promise<void>
   loadRecords: () => Promise<void>
   openFile: (filePath: string) => Promise<void>
   openFolder: (filePath: string) => Promise<void>
@@ -21,7 +23,7 @@ export const useExportStore = create<ExportState>((set, get) => ({
   records: [],
   error: null,
   lastResult: null,
-  exportLikedSongs: async (options) => {
+  exportSongs: async (options) => {
     if (get().exporting) {
       return
     }
@@ -29,7 +31,7 @@ export const useExportStore = create<ExportState>((set, get) => ({
     set({ exporting: true, error: null })
 
     try {
-      const result = await exportApi.exportLikedSongs(options)
+      const result = await exportApi.exportSongs(options)
       set({ exporting: false, lastResult: result, error: null })
       await get().loadRecords()
     } catch (error) {
@@ -39,6 +41,16 @@ export const useExportStore = create<ExportState>((set, get) => ({
       })
     }
   },
+  exportLikedSongs: async (options) =>
+    get().exportSongs({
+      ...options,
+      source: { type: 'liked' }
+    }),
+  exportPlaylistSongs: async (playlistId, options) =>
+    get().exportSongs({
+      ...options,
+      source: { type: 'playlist', playlistId }
+    }),
   loadRecords: async () => {
     set({ loadingRecords: true, error: null })
 

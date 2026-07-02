@@ -1,4 +1,4 @@
-import { BarChart3, Download, Heart, Home, LogIn, Settings } from 'lucide-react'
+import { BarChart3, Download, Heart, Home, ListMusic, LogIn, Settings } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { APP_NAME } from '../../utils/constants'
 
@@ -6,6 +6,7 @@ const items = [
   { to: '/', label: 'Dashboard', icon: Home },
   { to: '/login', label: '网易云登录', icon: LogIn },
   { to: '/liked-songs', label: '我喜欢的音乐', icon: Heart },
+  { to: '/playlists', label: '歌单', icon: ListMusic },
   { to: '/export', label: '数据导出', icon: Download },
   { to: '/settings', label: '设置', icon: Settings }
 ]

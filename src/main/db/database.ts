@@ -31,12 +31,19 @@ CREATE TABLE IF NOT EXISTS songs (
 
 CREATE TABLE IF NOT EXISTS playlists (
   id TEXT PRIMARY KEY,
-  ncm_playlist_id TEXT NOT NULL,
+  ncm_playlist_id TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
   description TEXT,
   cover_url TEXT,
   track_count INTEGER,
+  owner_user_id TEXT,
+  owner_nickname TEXT,
   type TEXT NOT NULL,
+  subscribed INTEGER,
+  special_type INTEGER,
+  play_count INTEGER,
+  update_time INTEGER,
+  create_time INTEGER,
   raw_data TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
@@ -58,6 +65,9 @@ CREATE TABLE IF NOT EXISTS export_records (
   song_count INTEGER NOT NULL,
   scope TEXT,
   sort_mode TEXT,
+  source_type TEXT,
+  source_id TEXT,
+  source_name TEXT,
   created_at TEXT NOT NULL
 );
 
@@ -83,6 +93,16 @@ export function initializeDatabase(): void {
   ensureColumn(db, 'playlist_songs', 'added_at', 'INTEGER')
   ensureColumn(db, 'export_records', 'scope', 'TEXT')
   ensureColumn(db, 'export_records', 'sort_mode', 'TEXT')
+  ensureColumn(db, 'export_records', 'source_type', 'TEXT')
+  ensureColumn(db, 'export_records', 'source_id', 'TEXT')
+  ensureColumn(db, 'export_records', 'source_name', 'TEXT')
+  ensureColumn(db, 'playlists', 'owner_user_id', 'TEXT')
+  ensureColumn(db, 'playlists', 'owner_nickname', 'TEXT')
+  ensureColumn(db, 'playlists', 'subscribed', 'INTEGER')
+  ensureColumn(db, 'playlists', 'special_type', 'INTEGER')
+  ensureColumn(db, 'playlists', 'play_count', 'INTEGER')
+  ensureColumn(db, 'playlists', 'update_time', 'INTEGER')
+  ensureColumn(db, 'playlists', 'create_time', 'INTEGER')
   logger.info('SQLite database initialized')
 }
 

@@ -17,6 +17,12 @@ export interface LikedSong extends Song {
   likedAt?: number
 }
 
+export interface PlaylistTrack extends Song {
+  playlistId: string
+  orderIndex: number
+  addedAt?: number
+}
+
 export interface SyncLikedSongsResult {
   total: number
   successCount: number

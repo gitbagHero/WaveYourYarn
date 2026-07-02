@@ -3,8 +3,12 @@ import { getPreloadApi } from './preloadClient'
 import type { ExportOptions, ExportRecord, ExportResult } from '../types/export'
 
 export const exportApi = {
+  exportSongs: async (options: ExportOptions) =>
+    unwrap(await getPreloadApi().export.exportSongs(options)),
   exportLikedSongs: async (options: ExportOptions) =>
     unwrap(await getPreloadApi().export.exportLikedSongs(options)),
+  exportPlaylistSongs: async (playlistId: string, options: Omit<ExportOptions, 'source'>) =>
+    unwrap(await getPreloadApi().export.exportPlaylistSongs(playlistId, options)),
   getExportRecords: async () => unwrap(await getPreloadApi().export.getExportRecords()),
   openFile: async (filePath: string) => unwrap(await getPreloadApi().export.openFile(filePath)),
   openFolder: async (filePath: string) => unwrap(await getPreloadApi().export.openFolder(filePath)),

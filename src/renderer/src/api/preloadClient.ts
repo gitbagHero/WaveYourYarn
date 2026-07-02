@@ -31,8 +31,23 @@ const browserFallbackApi: WaveYourYarnApi = {
     searchLikedSongs: () => unavailable(),
     clearLikedSongsCache: () => unavailable()
   },
+  playlists: {
+    syncUserPlaylists: () => unavailable(),
+    getPlaylists: () => unavailable(),
+    searchPlaylists: () => unavailable(),
+    getPlaylistsByType: () => unavailable(),
+    getPlaylistById: () => unavailable(),
+    clearPlaylistCache: () => unavailable(),
+    syncPlaylistSongs: () => unavailable(),
+    syncAllPlaylistSongs: () => unavailable(),
+    getPlaylistSongs: () => unavailable(),
+    searchPlaylistSongs: () => unavailable(),
+    clearPlaylistSongsCache: () => unavailable()
+  },
   export: {
+    exportSongs: () => unavailable(),
     exportLikedSongs: () => unavailable(),
+    exportPlaylistSongs: () => unavailable(),
     exportCsv: () => unavailable(),
     exportJson: () => unavailable(),
     exportMarkdown: () => unavailable(),

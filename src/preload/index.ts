@@ -25,8 +25,36 @@ const api: WaveYourYarnApi = {
       ipcRenderer.invoke('songs:search-liked-songs', typeof keyword === 'string' ? keyword : ''),
     clearLikedSongsCache: () => ipcRenderer.invoke('songs:clear-liked-songs-cache')
   },
+  playlists: {
+    syncUserPlaylists: () => ipcRenderer.invoke('playlists:sync-user-playlists'),
+    getPlaylists: () => ipcRenderer.invoke('playlists:get-playlists'),
+    searchPlaylists: (keyword: string) =>
+      ipcRenderer.invoke('playlists:search-playlists', typeof keyword === 'string' ? keyword : ''),
+    getPlaylistsByType: (type) => ipcRenderer.invoke('playlists:get-playlists-by-type', type),
+    getPlaylistById: (id: string) =>
+      ipcRenderer.invoke('playlists:get-playlist-by-id', typeof id === 'string' ? id : ''),
+    clearPlaylistCache: () => ipcRenderer.invoke('playlists:clear-playlist-cache'),
+    syncPlaylistSongs: (playlistId: string) =>
+      ipcRenderer.invoke('playlists:sync-playlist-songs', typeof playlistId === 'string' ? playlistId : ''),
+    syncAllPlaylistSongs: () => ipcRenderer.invoke('playlists:sync-all-playlist-songs'),
+    getPlaylistSongs: (playlistId: string) =>
+      ipcRenderer.invoke('playlists:get-playlist-songs', typeof playlistId === 'string' ? playlistId : ''),
+    searchPlaylistSongs: (playlistId: string, keyword: string) =>
+      ipcRenderer.invoke('playlists:search-playlist-songs', {
+        playlistId: typeof playlistId === 'string' ? playlistId : '',
+        keyword: typeof keyword === 'string' ? keyword : ''
+      }),
+    clearPlaylistSongsCache: (playlistId: string) =>
+      ipcRenderer.invoke('playlists:clear-playlist-songs-cache', typeof playlistId === 'string' ? playlistId : '')
+  },
   export: {
+    exportSongs: (options) => ipcRenderer.invoke('export:songs', options),
     exportLikedSongs: (options) => ipcRenderer.invoke('export:liked-songs', options),
+    exportPlaylistSongs: (playlistId, options) =>
+      ipcRenderer.invoke('export:playlist-songs', {
+        ...(options && typeof options === 'object' ? options : {}),
+        playlistId: typeof playlistId === 'string' ? playlistId : ''
+      }),
     exportCsv: (options: unknown) => ipcRenderer.invoke('export:csv', options),
     exportJson: (options: unknown) => ipcRenderer.invoke('export:json', options),
     exportMarkdown: (options: unknown) => ipcRenderer.invoke('export:markdown', options),

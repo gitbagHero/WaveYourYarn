@@ -6,6 +6,8 @@ import { LikedSongsPage } from './pages/LikedSongsPage'
 import { ExportPage } from './pages/ExportPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { PlaylistsPage } from './pages/PlaylistsPage'
+import { PlaylistDetailPage } from './pages/PlaylistDetailPage'
 
 export const routes: RouteObject[] = [
   {
@@ -15,6 +17,8 @@ export const routes: RouteObject[] = [
       { index: true, element: <DashboardPage /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'liked-songs', element: <LikedSongsPage /> },
+      { path: 'playlists', element: <PlaylistsPage /> },
+      { path: 'playlists/:id', element: <PlaylistDetailPage /> },
       { path: 'export', element: <ExportPage /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: '*', element: <NotFoundPage /> }

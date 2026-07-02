@@ -3,6 +3,14 @@ import type { LoginQrResult, LoginStatusResult, QrStatusResult } from '../main/t
 import type { UserProfile } from '../main/types/user'
 import type { LikedSong, SyncLikedSongsResult } from '../main/types/song'
 import type { ExportOptions, ExportRecord, ExportResult } from '../main/types/export'
+import type {
+  Playlist,
+  PlaylistType,
+  SyncAllPlaylistSongsResult,
+  SyncPlaylistSongsResult,
+  SyncPlaylistsResult
+} from '../main/types/playlist'
+import type { PlaylistTrack } from '../main/types/song'
 
 export interface WaveYourYarnApi {
   app: {
@@ -27,8 +35,26 @@ export interface WaveYourYarnApi {
     searchLikedSongs: (keyword: string) => Promise<IpcResult<LikedSong[]>>
     clearLikedSongsCache: () => Promise<IpcResult<void>>
   }
+  playlists: {
+    syncUserPlaylists: () => Promise<IpcResult<SyncPlaylistsResult>>
+    getPlaylists: () => Promise<IpcResult<Playlist[]>>
+    searchPlaylists: (keyword: string) => Promise<IpcResult<Playlist[]>>
+    getPlaylistsByType: (type: PlaylistType) => Promise<IpcResult<Playlist[]>>
+    getPlaylistById: (id: string) => Promise<IpcResult<Playlist | null>>
+    clearPlaylistCache: () => Promise<IpcResult<void>>
+    syncPlaylistSongs: (playlistId: string) => Promise<IpcResult<SyncPlaylistSongsResult>>
+    syncAllPlaylistSongs: () => Promise<IpcResult<SyncAllPlaylistSongsResult>>
+    getPlaylistSongs: (playlistId: string) => Promise<IpcResult<PlaylistTrack[]>>
+    searchPlaylistSongs: (playlistId: string, keyword: string) => Promise<IpcResult<PlaylistTrack[]>>
+    clearPlaylistSongsCache: (playlistId: string) => Promise<IpcResult<void>>
+  }
   export: {
+    exportSongs: (options: ExportOptions) => Promise<IpcResult<ExportResult>>
     exportLikedSongs: (options: ExportOptions) => Promise<IpcResult<ExportResult>>
+    exportPlaylistSongs: (
+      playlistId: string,
+      options: Omit<ExportOptions, 'source'>
+    ) => Promise<IpcResult<ExportResult>>
     exportCsv: (options: unknown) => Promise<IpcResult>
     exportJson: (options: unknown) => Promise<IpcResult>
     exportMarkdown: (options: unknown) => Promise<IpcResult>

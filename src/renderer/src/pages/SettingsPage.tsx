@@ -5,12 +5,20 @@ import { PageHeader } from '../components/common/PageHeader'
 import { useAppStore } from '../stores/appStore'
 import { useAuthStore } from '../stores/authStore'
 import { useExportStore } from '../stores/exportStore'
+import { usePlaylistStore } from '../stores/playlistStore'
 import { useSongStore } from '../stores/songStore'
 
 export function SettingsPage(): JSX.Element {
   const version = useAppStore((state) => state.version)
   const { isLoggedIn, user, loading, error, logout } = useAuthStore()
   const { likedSongs, loading: songsLoading, error: songsError, loadLikedSongs, clearCache } = useSongStore()
+  const {
+    playlists,
+    loading: playlistsLoading,
+    error: playlistsError,
+    loadPlaylists,
+    clearCache: clearPlaylistCache
+  } = usePlaylistStore()
   const {
     records,
     loadingRecords,
@@ -23,8 +31,9 @@ export function SettingsPage(): JSX.Element {
 
   useEffect(() => {
     loadLikedSongs()
+    loadPlaylists()
     loadRecords()
-  }, [loadLikedSongs, loadRecords])
+  }, [loadLikedSongs, loadPlaylists, loadRecords])
 
   const clearWebLoginSession = async (): Promise<void> => {
     setSessionMessage(null)
@@ -52,6 +61,18 @@ export function SettingsPage(): JSX.Element {
     }
 
     await clearRecords()
+  }
+
+  const clearPlaylistsCache = async (): Promise<void> => {
+    const confirmed = window.confirm(
+      '确认清空歌单缓存吗？这不会删除你的网易云歌单，也不会清空“我喜欢的音乐”歌曲缓存。'
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    await clearPlaylistCache()
   }
 
   return (
@@ -88,11 +109,18 @@ export function SettingsPage(): JSX.Element {
               {loadingRecords ? '读取中...' : `${records.length} 条`}
             </dd>
           </div>
+          <div className="flex justify-between">
+            <dt className="text-muted-foreground">歌单缓存</dt>
+            <dd className="font-medium">
+              {playlistsLoading ? '读取中...' : `${playlists.length} 个`}
+            </dd>
+          </div>
         </dl>
 
         {error ? <p className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
         {songsError ? <p className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{songsError}</p> : null}
         {exportError ? <p className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{exportError}</p> : null}
+        {playlistsError ? <p className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{playlistsError}</p> : null}
 
         <div className="mt-6 flex flex-wrap gap-3">
           {isLoggedIn ? (
@@ -134,6 +162,14 @@ export function SettingsPage(): JSX.Element {
             className="rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             清空导出历史
+          </button>
+          <button
+            type="button"
+            disabled={playlistsLoading || playlists.filter((playlist) => playlist.type !== 'liked').length === 0}
+            onClick={() => void clearPlaylistsCache()}
+            className="rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            清空歌单缓存
           </button>
         </div>
         {sessionMessage ? <p className="mt-3 text-sm text-muted-foreground">{sessionMessage}</p> : null}
