@@ -2,7 +2,7 @@ import type { IpcResult } from '../main/types/common'
 import type { LoginQrResult, LoginStatusResult, QrStatusResult } from '../main/types/auth'
 import type { UserProfile } from '../main/types/user'
 import type { LikedSong, SyncLikedSongsResult } from '../main/types/song'
-import type { ExportOptions, ExportRecord, ExportResult } from '../main/types/export'
+import type { ExportRecord, ExportRequestOptions, ExportResult } from '../main/types/export'
 import type {
   MusicAnalysisDataset,
   MusicStatsSummary,
@@ -17,6 +17,7 @@ import type {
   SyncPlaylistsResult
 } from '../main/types/playlist'
 import type { PlaylistTrack } from '../main/types/song'
+import type { PublicSettingKey, PublicSettings } from '../main/types/settings'
 
 export interface WaveYourYarnApi {
   app: {
@@ -55,18 +56,18 @@ export interface WaveYourYarnApi {
     clearPlaylistSongsCache: (playlistId: string) => Promise<IpcResult<void>>
   }
   export: {
-    exportSongs: (options: ExportOptions) => Promise<IpcResult<ExportResult>>
-    exportLikedSongs: (options: ExportOptions) => Promise<IpcResult<ExportResult>>
+    exportSongs: (options: ExportRequestOptions) => Promise<IpcResult<ExportResult>>
+    exportLikedSongs: (options: ExportRequestOptions) => Promise<IpcResult<ExportResult>>
     exportPlaylistSongs: (
       playlistId: string,
-      options: Omit<ExportOptions, 'source'>
+      options: Omit<ExportRequestOptions, 'source'>
     ) => Promise<IpcResult<ExportResult>>
     exportCsv: (options: unknown) => Promise<IpcResult>
     exportJson: (options: unknown) => Promise<IpcResult>
     exportMarkdown: (options: unknown) => Promise<IpcResult>
     getExportRecords: () => Promise<IpcResult<ExportRecord[]>>
-    openFile: (filePath: string) => Promise<IpcResult<void>>
-    openFolder: (filePath: string) => Promise<IpcResult<void>>
+    openFile: (recordId: string) => Promise<IpcResult<void>>
+    openFolder: (recordId: string) => Promise<IpcResult<void>>
     clearRecords: () => Promise<IpcResult<void>>
   }
   statistics: {
@@ -75,8 +76,10 @@ export interface WaveYourYarnApi {
     getAnalysisDataset: (source: StatisticsSource) => Promise<IpcResult<MusicAnalysisDataset>>
   }
   settings: {
-    get: (key: string) => Promise<IpcResult>
-    set: (key: string, value: string) => Promise<IpcResult>
-    getAll: () => Promise<IpcResult>
+    get: (key: PublicSettingKey) => Promise<IpcResult<string | null>>
+    set: (key: PublicSettingKey, value: string) => Promise<IpcResult<void>>
+    getAll: () => Promise<IpcResult<PublicSettings>>
+    selectExportDirectory: () => Promise<IpcResult<string | null>>
+    resetExportDirectory: () => Promise<IpcResult<void>>
   }
 }

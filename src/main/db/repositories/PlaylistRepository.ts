@@ -15,17 +15,24 @@ export class PlaylistRepository {
   }
 
   upsertLikedPlaylist(userId: string, trackCount: number): Playlist {
-    const ncmPlaylistId = toLikedPlaylistId(userId)
     const existing = this.getLikedPlaylist(userId)
     const now = nowIso()
     const playlist: Playlist = {
       id: existing?.id ?? nanoid(),
-      ncmPlaylistId,
-      name: '我喜欢的音乐',
-      description: '网易云音乐喜欢列表本地缓存',
+      ncmPlaylistId: existing?.ncmPlaylistId ?? toLikedPlaylistId(userId),
+      name: existing?.name ?? '我喜欢的音乐',
+      description: existing?.description ?? '网易云音乐喜欢列表本地缓存',
+      coverUrl: existing?.coverUrl,
       trackCount,
       ownerUserId: userId,
+      ownerNickname: existing?.ownerNickname,
       type: 'liked',
+      subscribed: existing?.subscribed,
+      specialType: existing?.specialType,
+      playCount: existing?.playCount,
+      updateTime: existing?.updateTime,
+      createTime: existing?.createTime,
+      rawData: existing?.rawData,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now
     }
@@ -159,10 +166,74 @@ export class PlaylistRepository {
 
   getLikedPlaylist(userId: string): Playlist | null {
     const row = this.db
-      .prepare("SELECT * FROM playlists WHERE ncm_playlist_id = ? AND type = 'liked'")
-      .get(toLikedPlaylistId(userId)) as PlaylistRow | undefined
+      .prepare(
+        `SELECT * FROM playlists
+         WHERE type = 'liked'
+           AND (owner_user_id = @userId OR ncm_playlist_id = @syntheticId)
+         ORDER BY CASE WHEN ncm_playlist_id = @syntheticId THEN 1 ELSE 0 END ASC
+         LIMIT 1`
+      )
+      .get({ userId, syntheticId: toLikedPlaylistId(userId) }) as PlaylistRow | undefined
 
     return row ? fromPlaylistRow(row) : null
+  }
+
+  mergeSyntheticLikedPlaylist(userId: string, realPlaylistId: string): void {
+    const synthetic = this.findByNcmPlaylistId(toLikedPlaylistId(userId))
+
+    if (!synthetic || synthetic.id === realPlaylistId) {
+      return
+    }
+
+    const syntheticTracks = this.db
+      .prepare(
+        `SELECT song_id, order_index, added_at, created_at
+         FROM playlist_songs
+         WHERE playlist_id = ?
+         ORDER BY order_index ASC`
+      )
+      .all(synthetic.id) as Array<{
+      song_id: string
+      order_index: number
+      added_at: number | null
+      created_at: string
+    }>
+    const insertMissingTrack = this.db.prepare(
+      `INSERT INTO playlist_songs (id, playlist_id, song_id, order_index, added_at, created_at)
+       SELECT @id, @realPlaylistId, @songId, @orderIndex, @addedAt, @createdAt
+       WHERE NOT EXISTS (
+         SELECT 1 FROM playlist_songs
+         WHERE playlist_id = @realPlaylistId AND song_id = @songId
+       )`
+    )
+
+    for (const track of syntheticTracks) {
+      insertMissingTrack.run({
+        id: nanoid(),
+        realPlaylistId,
+        songId: track.song_id,
+        orderIndex: track.order_index,
+        addedAt: track.added_at,
+        createdAt: track.created_at
+      })
+    }
+
+    this.clearPlaylistSongs(synthetic.id)
+    this.db.prepare('DELETE FROM playlists WHERE id = ?').run(synthetic.id)
+  }
+
+  removePlaylistsMissingFromSnapshot(ncmPlaylistIds: string[], userId: string): void {
+    const keepIds = new Set(ncmPlaylistIds)
+    const syntheticLikedId = toLikedPlaylistId(userId)
+
+    for (const playlist of this.findAll()) {
+      if (playlist.ncmPlaylistId === syntheticLikedId || keepIds.has(playlist.ncmPlaylistId)) {
+        continue
+      }
+
+      this.clearPlaylistSongs(playlist.id)
+      this.db.prepare('DELETE FROM playlists WHERE id = ?').run(playlist.id)
+    }
   }
 
   getSongsByPlaylistId(playlistId: string): LikedSong[] {
@@ -243,6 +314,11 @@ export class PlaylistRepository {
     }
 
     this.db.prepare("DELETE FROM playlists WHERE type != 'liked'").run()
+  }
+
+  clearAllPlaylists(): void {
+    this.db.prepare('DELETE FROM playlist_songs').run()
+    this.db.prepare('DELETE FROM playlists').run()
   }
 }
 

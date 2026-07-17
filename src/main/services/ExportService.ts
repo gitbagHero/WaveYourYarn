@@ -16,6 +16,7 @@ import type { LikedSong, PlaylistTrack } from '../types/song'
 import { logger } from '../utils/logger'
 import { nowIso } from '../utils/time'
 import { SongService } from './SongService'
+import { SettingsService } from './SettingsService'
 
 const EXPORT_CANCELLED_MESSAGE = '导出已取消'
 export const EXPORT_CANCELLED_CODE = 'EXPORT_CANCELLED'
@@ -50,7 +51,8 @@ export class ExportService {
   constructor(
     private readonly exportRecordRepository = new ExportRecordRepository(),
     private readonly songService = new SongService(),
-    private readonly playlistRepository = new PlaylistRepository()
+    private readonly playlistRepository = new PlaylistRepository(),
+    private readonly settingsService = new SettingsService()
   ) {}
 
   getExportRecordCount(): number {
@@ -269,20 +271,32 @@ export class ExportService {
     return this.exportRecordRepository.findAll()
   }
 
-  async openExportFile(filePath: string): Promise<void> {
-    const result = await shell.openPath(filePath)
+  async openExportFile(recordId: string): Promise<void> {
+    const record = this.getExportRecordOrThrow(recordId)
+    const result = await shell.openPath(record.filePath)
 
     if (result) {
       throw new Error(result)
     }
   }
 
-  async openExportFolder(filePath: string): Promise<void> {
-    shell.showItemInFolder(filePath)
+  async openExportFolder(recordId: string): Promise<void> {
+    const record = this.getExportRecordOrThrow(recordId)
+    shell.showItemInFolder(record.filePath)
   }
 
   async clearExportRecords(): Promise<void> {
     this.exportRecordRepository.clearAll()
+  }
+
+  private getExportRecordOrThrow(recordId: string): ExportRecord {
+    const record = this.exportRecordRepository.findById(recordId)
+
+    if (!record) {
+      throw new Error('导出记录不存在或已被清理')
+    }
+
+    return record
   }
 
   private async getSongsForExport(options: ExportOptions): Promise<ExportData> {
@@ -315,9 +329,12 @@ export class ExportService {
   }
 
   private async selectExportFilePath(format: ExportFormat, sourceName: string): Promise<string> {
+    const defaultDirectory = await this.settingsService.resolveDefaultExportDirectory(
+      app.getPath('downloads')
+    )
     const result = await dialog.showSaveDialog({
       title: '导出歌曲',
-      defaultPath: join(app.getPath('downloads'), defaultExportFileName(format, sourceName)),
+      defaultPath: join(defaultDirectory, defaultExportFileName(format, sourceName)),
       filters: exportFilters[format]
     })
 

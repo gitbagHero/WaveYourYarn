@@ -74,10 +74,23 @@ export class SongRepository {
     return rows.map(fromSongRow)
   }
 
-  clearAll(): void {
-    this.db.prepare('DELETE FROM playlist_songs').run()
-    this.db.prepare("DELETE FROM playlists WHERE type = 'liked'").run()
+  clearAllSongs(): void {
     this.db.prepare('DELETE FROM songs').run()
+  }
+
+  deleteOrphanSongs(): number {
+    const result = this.db
+      .prepare(
+        `DELETE FROM songs
+         WHERE NOT EXISTS (
+           SELECT 1
+           FROM playlist_songs
+           WHERE playlist_songs.song_id = songs.id
+         )`
+      )
+      .run()
+
+    return result.changes
   }
 }
 

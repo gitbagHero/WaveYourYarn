@@ -82,28 +82,28 @@ export function registerExportIpc(): void {
     toIpcResult(() => exportService.getExportRecords(), '读取导出历史失败')
   )
 
-  ipcMain.handle('export:open-file', async (_event, filePath: unknown) => {
-    if (typeof filePath !== 'string' || filePath.trim().length === 0) {
+  ipcMain.handle('export:open-file', async (_event, recordId: unknown) => {
+    if (typeof recordId !== 'string' || recordId.trim().length === 0) {
       return {
         success: false,
-        message: '文件路径不能为空',
-        error: 'INVALID_FILE_PATH'
+        message: '导出记录 ID 不能为空',
+        error: 'INVALID_EXPORT_RECORD_ID'
       } satisfies IpcResult
     }
 
-    return toIpcResult(() => exportService.openExportFile(filePath), '打开文件失败')
+    return toIpcResult(() => exportService.openExportFile(recordId), '打开文件失败')
   })
 
-  ipcMain.handle('export:open-folder', async (_event, filePath: unknown) => {
-    if (typeof filePath !== 'string' || filePath.trim().length === 0) {
+  ipcMain.handle('export:open-folder', async (_event, recordId: unknown) => {
+    if (typeof recordId !== 'string' || recordId.trim().length === 0) {
       return {
         success: false,
-        message: '文件路径不能为空',
-        error: 'INVALID_FILE_PATH'
+        message: '导出记录 ID 不能为空',
+        error: 'INVALID_EXPORT_RECORD_ID'
       } satisfies IpcResult
     }
 
-    return toIpcResult(() => exportService.openExportFolder(filePath), '打开所在目录失败')
+    return toIpcResult(() => exportService.openExportFolder(recordId), '打开所在目录失败')
   })
 
   ipcMain.handle('export:clear-records', async () =>
@@ -162,8 +162,7 @@ function parseExportOptions(options: unknown): ExportOptions | null {
     format: record.format as ExportOptions['format'],
     scope: record.scope as ExportOptions['scope'],
     keyword: typeof record.keyword === 'string' ? record.keyword : undefined,
-    sortMode: record.sortMode as ExportOptions['sortMode'],
-    filePath: typeof record.filePath === 'string' ? record.filePath : undefined
+    sortMode: record.sortMode as ExportOptions['sortMode']
   }
 }
 

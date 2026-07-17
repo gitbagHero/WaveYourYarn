@@ -18,7 +18,8 @@ interface SongState {
   searchLikedSongs: (keyword: string) => Promise<void>
   setKeyword: (keyword: string) => void
   setSortMode: (sortMode: LikedSongsSortMode) => void
-  clearCache: () => Promise<void>
+  clearCache: () => Promise<boolean>
+  reset: () => void
 }
 
 export const useSongStore = create<SongState>((set, get) => ({
@@ -112,13 +113,26 @@ export const useSongStore = create<SongState>((set, get) => ({
         error: null,
         lastSyncResult: null
       })
+      return true
     } catch (error) {
       set({
         loading: false,
         error: toErrorMessage(error)
       })
+      return false
     }
-  }
+  },
+  reset: () =>
+    set({
+      likedSongs: [],
+      filteredSongs: [],
+      loading: false,
+      syncing: false,
+      keyword: '',
+      sortMode: 'newest',
+      error: null,
+      lastSyncResult: null
+    })
 }))
 
 function filterSongs(songs: LikedSong[], keyword: string): LikedSong[] {

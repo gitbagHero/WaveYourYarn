@@ -14,11 +14,13 @@ export interface QrStatusResult {
   message?: string
   cookie?: string
   user?: UserProfile
+  cacheReset?: boolean
 }
 
 export interface LoginStatusResult {
   isLoggedIn: boolean
   user?: UserProfile
+  cacheReset?: boolean
 }
 
 export type LoginMethod = 'web' | 'qr' | 'manual_cookie'

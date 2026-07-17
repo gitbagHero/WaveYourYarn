@@ -133,18 +133,15 @@ export class StatisticsRepository {
       .prepare('SELECT COUNT(DISTINCT playlist_id) as count FROM playlist_songs')
       .get() as { count: number }
     const countByType = new Map<PlaylistType, number>(rows.map((row) => [row.type, row.count]))
-    const rawLikedCount = countByType.get('liked') ?? 0
-    const likedCount = rawLikedCount > 0 ? 1 : 0
-    const duplicateLikedCount = Math.max(0, rawLikedCount - likedCount)
 
     return {
-      totalPlaylists: rows.reduce((total, row) => total + row.count, 0) - duplicateLikedCount,
-      likedCount,
+      totalPlaylists: rows.reduce((total, row) => total + row.count, 0),
+      likedCount: countByType.get('liked') ?? 0,
       createdCount: countByType.get('created') ?? 0,
       subscribedCount: countByType.get('subscribed') ?? 0,
       unknownCount: countByType.get('unknown') ?? 0,
       totalTracksInPlaylists: totalTracksRow.count,
-      syncedPlaylistCount: Math.max(0, syncedPlaylistRow.count - duplicateLikedCount)
+      syncedPlaylistCount: syncedPlaylistRow.count
     }
   }
 

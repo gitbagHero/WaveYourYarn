@@ -12,9 +12,11 @@ export interface QrStatusResult {
   status: QrLoginStatus
   message?: string
   user?: UserProfile
+  cacheReset?: boolean
 }
 
 export interface LoginStatusResult {
   isLoggedIn: boolean
   user?: UserProfile
+  cacheReset?: boolean
 }

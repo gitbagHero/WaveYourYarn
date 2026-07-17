@@ -59,10 +59,10 @@ const api: WaveYourYarnApi = {
     exportJson: (options: unknown) => ipcRenderer.invoke('export:json', options),
     exportMarkdown: (options: unknown) => ipcRenderer.invoke('export:markdown', options),
     getExportRecords: () => ipcRenderer.invoke('export:get-records'),
-    openFile: (filePath: string) =>
-      ipcRenderer.invoke('export:open-file', typeof filePath === 'string' ? filePath : ''),
-    openFolder: (filePath: string) =>
-      ipcRenderer.invoke('export:open-folder', typeof filePath === 'string' ? filePath : ''),
+    openFile: (recordId: string) =>
+      ipcRenderer.invoke('export:open-file', typeof recordId === 'string' ? recordId : ''),
+    openFolder: (recordId: string) =>
+      ipcRenderer.invoke('export:open-folder', typeof recordId === 'string' ? recordId : ''),
     clearRecords: () => ipcRenderer.invoke('export:clear-records')
   },
   statistics: {
@@ -73,7 +73,9 @@ const api: WaveYourYarnApi = {
   settings: {
     get: (key: string) => ipcRenderer.invoke('settings:get', key),
     set: (key: string, value: string) => ipcRenderer.invoke('settings:set', key, value),
-    getAll: () => ipcRenderer.invoke('settings:get-all')
+    getAll: () => ipcRenderer.invoke('settings:get-all'),
+    selectExportDirectory: () => ipcRenderer.invoke('settings:select-export-directory'),
+    resetExportDirectory: () => ipcRenderer.invoke('settings:reset-export-directory')
   }
 }
 

@@ -10,8 +10,8 @@ export const exportApi = {
   exportPlaylistSongs: async (playlistId: string, options: Omit<ExportOptions, 'source'>) =>
     unwrap(await getPreloadApi().export.exportPlaylistSongs(playlistId, options)),
   getExportRecords: async () => unwrap(await getPreloadApi().export.getExportRecords()),
-  openFile: async (filePath: string) => unwrap(await getPreloadApi().export.openFile(filePath)),
-  openFolder: async (filePath: string) => unwrap(await getPreloadApi().export.openFolder(filePath)),
+  openFile: async (recordId: string) => unwrap(await getPreloadApi().export.openFile(recordId)),
+  openFolder: async (recordId: string) => unwrap(await getPreloadApi().export.openFolder(recordId)),
   clearRecords: async () => unwrap(await getPreloadApi().export.clearRecords())
 }
 

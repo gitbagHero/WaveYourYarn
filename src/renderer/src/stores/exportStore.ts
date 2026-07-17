@@ -12,9 +12,10 @@ interface ExportState {
   exportLikedSongs: (options: ExportOptions) => Promise<void>
   exportPlaylistSongs: (playlistId: string, options: Omit<ExportOptions, 'source'>) => Promise<void>
   loadRecords: () => Promise<void>
-  openFile: (filePath: string) => Promise<void>
-  openFolder: (filePath: string) => Promise<void>
+  openFile: (recordId: string) => Promise<void>
+  openFolder: (recordId: string) => Promise<void>
   clearRecords: () => Promise<void>
+  reset: () => void
 }
 
 export const useExportStore = create<ExportState>((set, get) => ({
@@ -64,16 +65,16 @@ export const useExportStore = create<ExportState>((set, get) => ({
       })
     }
   },
-  openFile: async (filePath) => {
+  openFile: async (recordId) => {
     try {
-      await exportApi.openFile(filePath)
+      await exportApi.openFile(recordId)
     } catch (error) {
       set({ error: toErrorMessage(error) })
     }
   },
-  openFolder: async (filePath) => {
+  openFolder: async (recordId) => {
     try {
-      await exportApi.openFolder(filePath)
+      await exportApi.openFolder(recordId)
     } catch (error) {
       set({ error: toErrorMessage(error) })
     }
@@ -90,7 +91,15 @@ export const useExportStore = create<ExportState>((set, get) => ({
         error: toErrorMessage(error)
       })
     }
-  }
+  },
+  reset: () =>
+    set({
+      exporting: false,
+      loadingRecords: false,
+      records: [],
+      error: null,
+      lastResult: null
+    })
 }))
 
 function toErrorMessage(error: unknown): string {

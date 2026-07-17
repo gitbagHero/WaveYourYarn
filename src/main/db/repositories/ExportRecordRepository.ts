@@ -54,6 +54,13 @@ export class ExportRecordRepository {
     return rows.map(fromExportRecordRow)
   }
 
+  findById(id: string): ExportRecord | null {
+    const row = this.db.prepare('SELECT * FROM export_records WHERE id = ?').get(id) as
+      | ExportRecordRow
+      | undefined
+    return row ? fromExportRecordRow(row) : null
+  }
+
   clearAll(): void {
     this.db.prepare('DELETE FROM export_records').run()
   }

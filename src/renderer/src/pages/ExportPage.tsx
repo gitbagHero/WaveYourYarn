@@ -401,8 +401,8 @@ export function ExportPage(): JSX.Element {
             <InfoRow label="文件路径" value={lastResult.filePath} />
           </dl>
           <div className="mt-4 flex flex-wrap gap-3">
-            <ActionButton label="打开文件" onClick={() => void openFile(lastResult.filePath)} />
-            <ActionButton label="打开所在目录" onClick={() => void openFolder(lastResult.filePath)} />
+            <ActionButton label="打开文件" onClick={() => void openFile(lastResult.id)} />
+            <ActionButton label="打开所在目录" onClick={() => void openFolder(lastResult.id)} />
           </div>
         </section>
       ) : null}
@@ -465,8 +465,8 @@ export function ExportPage(): JSX.Element {
                     <td className="min-w-80 px-4 py-3 text-muted-foreground">{record.filePath}</td>
                     <td className="whitespace-nowrap px-4 py-3">
                       <div className="flex gap-2">
-                        <ActionButton label="打开文件" onClick={() => void openFile(record.filePath)} />
-                        <ActionButton label="打开目录" onClick={() => void openFolder(record.filePath)} />
+                        <ActionButton label="打开文件" onClick={() => void openFile(record.id)} />
+                        <ActionButton label="打开目录" onClick={() => void openFolder(record.id)} />
                       </div>
                     </td>
                   </tr>

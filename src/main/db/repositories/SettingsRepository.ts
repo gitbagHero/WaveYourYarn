@@ -35,6 +35,14 @@ export class SettingsRepository {
     this.db.prepare('DELETE FROM app_settings WHERE key = ?').run(key)
   }
 
+  removeByPrefixes(prefixes: string[]): void {
+    const remove = this.db.prepare('DELETE FROM app_settings WHERE key LIKE ?')
+
+    for (const prefix of prefixes) {
+      remove.run(`${prefix}%`)
+    }
+  }
+
   getAll(): Record<string, string> {
     const rows = this.db.prepare('SELECT key, value FROM app_settings').all() as Array<{
       key: string

@@ -76,9 +76,30 @@ export class PlaylistService {
         syncedAt
       }
 
-      this.playlistRepository.upsertPlaylists(playlists)
-      this.settingsRepository.set(PLAYLISTS_LAST_SYNCED_AT_KEY, syncedAt)
-      this.settingsRepository.set(PLAYLISTS_LAST_SYNC_RESULT_KEY, JSON.stringify(result))
+      const writeTransaction = this.db.transaction(() => {
+        this.playlistRepository.upsertPlaylists(playlists)
+        const realLikedPlaylist = this.playlistRepository.getLikedPlaylist(currentUser.userId)
+
+        if (
+          realLikedPlaylist &&
+          realLikedPlaylist.ncmPlaylistId !== `liked:${currentUser.userId}`
+        ) {
+          this.playlistRepository.mergeSyntheticLikedPlaylist(
+            currentUser.userId,
+            realLikedPlaylist.id
+          )
+        }
+
+        this.playlistRepository.removePlaylistsMissingFromSnapshot(
+          playlists.map((playlist) => playlist.ncmPlaylistId),
+          currentUser.userId
+        )
+        this.songRepository.deleteOrphanSongs()
+        this.settingsRepository.set(PLAYLISTS_LAST_SYNCED_AT_KEY, syncedAt)
+        this.settingsRepository.set(PLAYLISTS_LAST_SYNC_RESULT_KEY, JSON.stringify(result))
+      })
+
+      writeTransaction()
       logger.info('用户歌单同步完成', result)
       return result
     } catch (error) {
@@ -106,9 +127,14 @@ export class PlaylistService {
   }
 
   async clearPlaylistCache(): Promise<void> {
-    this.playlistRepository.clearNonLikedPlaylists()
-    this.settingsRepository.remove(PLAYLISTS_LAST_SYNCED_AT_KEY)
-    this.settingsRepository.remove(PLAYLISTS_LAST_SYNC_RESULT_KEY)
+    const clearTransaction = this.db.transaction(() => {
+      this.playlistRepository.clearNonLikedPlaylists()
+      this.songRepository.deleteOrphanSongs()
+      this.settingsRepository.remove(PLAYLISTS_LAST_SYNCED_AT_KEY)
+      this.settingsRepository.remove(PLAYLISTS_LAST_SYNC_RESULT_KEY)
+    })
+
+    clearTransaction()
     logger.info('本地歌单缓存已清空')
   }
 
@@ -287,9 +313,14 @@ export class PlaylistService {
       throw new Error('“我喜欢的音乐”的缓存请在“我喜欢的音乐”页面管理')
     }
 
-    this.playlistRepository.clearPlaylistSongs(playlistId)
-    this.settingsRepository.remove(`playlist_tracks_last_synced_at:${playlistId}`)
-    this.settingsRepository.remove(`playlist_tracks_last_sync_result:${playlistId}`)
+    const clearTransaction = this.db.transaction(() => {
+      this.playlistRepository.clearPlaylistSongs(playlistId)
+      this.songRepository.deleteOrphanSongs()
+      this.settingsRepository.remove(`playlist_tracks_last_synced_at:${playlistId}`)
+      this.settingsRepository.remove(`playlist_tracks_last_sync_result:${playlistId}`)
+    })
+
+    clearTransaction()
     logger.info('指定歌单歌曲缓存已清空', { playlistId })
   }
 

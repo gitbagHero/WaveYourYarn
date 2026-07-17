@@ -1,12 +1,18 @@
 import { create } from 'zustand'
 import { authApi } from '../api/authApi'
 import type { UserProfile } from '../types/user'
+import { useExportStore } from './exportStore'
+import { usePlaylistDetailStore } from './playlistDetailStore'
+import { usePlaylistStore } from './playlistStore'
+import { useSongStore } from './songStore'
+import { useStatisticsStore } from './statisticsStore'
 
 interface AuthState {
   isLoggedIn: boolean
   user: UserProfile | null
   loading: boolean
   error: string | null
+  notice: string | null
   checkLoginStatus: () => Promise<void>
   openWebLogin: () => Promise<void>
   loginWithCookie: (cookie: string) => Promise<void>
@@ -19,16 +25,22 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   loading: false,
   error: null,
+  notice: null,
   checkLoginStatus: async () => {
     set({ loading: true, error: null })
     const result = await authApi.getLoginStatus()
 
     if (result.success) {
+      if (result.data?.cacheReset) {
+        resetAccountScopedStores()
+      }
+
       set({
         isLoggedIn: Boolean(result.data?.isLoggedIn),
         user: result.data?.user ?? null,
         loading: false,
-        error: null
+        error: null,
+        notice: result.data?.cacheReset ? accountSwitchNotice : null
       })
       return
     }
@@ -37,7 +49,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       isLoggedIn: false,
       user: null,
       loading: false,
-      error: result.message ?? '登录状态检查失败'
+      error: result.message ?? '登录状态检查失败',
+      notice: null
     })
   },
   setUser: (user) =>
@@ -51,11 +64,16 @@ export const useAuthStore = create<AuthState>((set) => ({
     const result = await authApi.openWebLogin()
 
     if (result.success && result.data?.isLoggedIn && result.data.user) {
+      if (result.data.cacheReset) {
+        resetAccountScopedStores()
+      }
+
       set({
         isLoggedIn: true,
         user: result.data.user,
         loading: false,
-        error: null
+        error: null,
+        notice: result.data.cacheReset ? accountSwitchNotice : null
       })
       return
     }
@@ -64,7 +82,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       isLoggedIn: false,
       user: null,
       loading: false,
-      error: result.message ?? '网页登录失败，请重试'
+      error: result.message ?? '网页登录失败，请重试',
+      notice: null
     })
   },
   loginWithCookie: async (cookie) => {
@@ -72,11 +91,16 @@ export const useAuthStore = create<AuthState>((set) => ({
     const result = await authApi.loginWithCookie(cookie)
 
     if (result.success && result.data?.isLoggedIn && result.data.user) {
+      if (result.data.cacheReset) {
+        resetAccountScopedStores()
+      }
+
       set({
         isLoggedIn: true,
         user: result.data.user,
         loading: false,
-        error: null
+        error: null,
+        notice: result.data.cacheReset ? accountSwitchNotice : null
       })
       return
     }
@@ -85,7 +109,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       isLoggedIn: false,
       user: null,
       loading: false,
-      error: result.message ?? 'Cookie 无效或已过期，请重新获取'
+      error: result.message ?? 'Cookie 无效或已过期，请重新获取',
+      notice: null
     })
   },
   logout: async () => {
@@ -97,7 +122,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         isLoggedIn: false,
         user: null,
         loading: false,
-        error: null
+        error: null,
+        notice: null
       })
       return
     }
@@ -108,3 +134,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     })
   }
 }))
+
+const accountSwitchNotice = '检测到网易云账号切换，旧账号的本地缓存和导出历史已清理。'
+
+function resetAccountScopedStores(): void {
+  useSongStore.getState().reset()
+  usePlaylistStore.getState().reset()
+  usePlaylistDetailStore.getState().reset()
+  useStatisticsStore.getState().reset()
+  useExportStore.getState().reset()
+}

@@ -22,6 +22,7 @@ interface PlaylistState {
   setKeyword: (keyword: string) => void
   setTypeFilter: (type: PlaylistTypeFilter) => void
   clearCache: () => Promise<void>
+  reset: () => void
 }
 
 export const usePlaylistStore = create<PlaylistState>((set, get) => ({
@@ -114,7 +115,20 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
     } catch (error) {
       set({ loading: false, error: toErrorMessage(error) })
     }
-  }
+  },
+  reset: () =>
+    set({
+      playlists: [],
+      filteredPlaylists: [],
+      loading: false,
+      syncing: false,
+      syncingAllSongs: false,
+      keyword: '',
+      typeFilter: 'all',
+      error: null,
+      lastSyncResult: null,
+      lastSyncAllSongsResult: null
+    })
 }))
 
 function applyFilters(playlists: Playlist[], keyword: string, typeFilter: PlaylistTypeFilter): Playlist[] {

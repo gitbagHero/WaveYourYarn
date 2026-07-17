@@ -69,8 +69,8 @@ export class UserRepository {
     return row ? toUserProfile(row) : null
   }
 
-  clearUsers(): void {
-    this.db.prepare('DELETE FROM users').run()
+  clearExceptNcmUserId(ncmUserId: string): void {
+    this.db.prepare('DELETE FROM users WHERE ncm_user_id != ?').run(ncmUserId)
   }
 }
 

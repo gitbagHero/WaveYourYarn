@@ -18,12 +18,13 @@ export class SecureStorageService {
       return
     }
 
-    logger.warn('safeStorage is unavailable; storing secret with local fallback')
-    this.settingsRepository.set(storageKey, `${PLAIN_STORAGE_PREFIX}${value}`)
+    logger.warn('safeStorage is unavailable; refusing to persist a plaintext secret')
+    throw new Error('系统安全存储当前不可用，无法安全保存登录凭证')
   }
 
   async getSecret(key: string): Promise<string | null> {
-    const value = this.settingsRepository.get(toStorageKey(key))
+    const storageKey = toStorageKey(key)
+    const value = this.settingsRepository.get(storageKey)
 
     if (!value) {
       return null
@@ -35,8 +36,18 @@ export class SecureStorageService {
     }
 
     if (value.startsWith(PLAIN_STORAGE_PREFIX)) {
-      // TODO: Replace fallback plaintext storage once safeStorage is available in all target environments.
-      return value.slice(PLAIN_STORAGE_PREFIX.length)
+      const plaintext = value.slice(PLAIN_STORAGE_PREFIX.length)
+
+      if (safeStorage.isEncryptionAvailable()) {
+        const encrypted = safeStorage.encryptString(plaintext).toString('base64')
+        this.settingsRepository.set(storageKey, `${SAFE_STORAGE_PREFIX}${encrypted}`)
+        logger.info('历史明文登录凭证已迁移到系统安全存储')
+        return plaintext
+      }
+
+      this.settingsRepository.remove(storageKey)
+      logger.warn('系统安全存储不可用，历史明文登录凭证已移除')
+      return null
     }
 
     return value

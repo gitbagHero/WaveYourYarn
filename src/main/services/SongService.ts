@@ -9,6 +9,7 @@ import type { LikedSong, Song, SyncLikedSongsResult } from '../types/song'
 import { logger } from '../utils/logger'
 import { nowIso } from '../utils/time'
 import { SecureStorageService } from './SecureStorageService'
+import { CACHE_OWNER_NCM_USER_ID_KEY } from './CacheOwnershipService'
 
 const NCM_COOKIE_KEY = 'ncm_cookie'
 const NCM_USER_ID_KEY = 'ncm_user_id'
@@ -116,16 +117,15 @@ export class SongService {
   }
 
   async getLikedSongs(): Promise<LikedSong[]> {
-    const userId = await this.secureStorageService.getSecret(NCM_USER_ID_KEY)
+    const userId =
+      (await this.secureStorageService.getSecret(NCM_USER_ID_KEY)) ??
+      this.settingsRepository.get(CACHE_OWNER_NCM_USER_ID_KEY)
 
     if (userId) {
       return this.playlistRepository.getLikedSongsWithMeta(userId)
     }
 
-    return this.songRepository.findAll().map((song, index) => ({
-      ...song,
-      orderIndex: index
-    }))
+    return []
   }
 
   async searchLikedSongs(keyword: string): Promise<LikedSong[]> {
@@ -149,7 +149,7 @@ export class SongService {
   async clearLikedSongsCache(): Promise<void> {
     const clearTransaction = this.db.transaction(() => {
       this.playlistRepository.clearLikedPlaylists()
-      this.songRepository.clearAll()
+      this.songRepository.deleteOrphanSongs()
       this.settingsRepository.remove(LAST_SYNCED_AT_KEY)
       this.settingsRepository.remove(LAST_SYNC_RESULT_KEY)
     })

@@ -6,11 +6,17 @@ import type { UserProfile } from '../types/user'
 import { logger } from '../utils/logger'
 import { SecureStorageService } from './SecureStorageService'
 import { WebLoginService } from './WebLoginService'
+import { CacheOwnershipService } from './CacheOwnershipService'
 
 const NCM_COOKIE_KEY = 'ncm_cookie'
 const NCM_USER_ID_KEY = 'ncm_user_id'
 const NCM_NICKNAME_KEY = 'ncm_nickname'
 const NCM_AVATAR_URL_KEY = 'ncm_avatar_url'
+
+interface AuthenticatedUserResult {
+  user: UserProfile
+  cacheReset: boolean
+}
 
 export class AuthService {
   private readonly secureStorageService: SecureStorageService
@@ -20,7 +26,8 @@ export class AuthService {
 
   constructor(
     secureStorageService = new SecureStorageService(),
-    userRepository = new UserRepository()
+    userRepository = new UserRepository(),
+    private readonly cacheOwnershipService = new CacheOwnershipService()
   ) {
     this.secureStorageService = secureStorageService
     this.userRepository = userRepository
@@ -54,12 +61,13 @@ export class AuthService {
       }
     }
 
-    const user = await this.saveAuthenticatedCookie(result.cookie, 'qr')
+    const authenticated = await this.saveAuthenticatedCookie(result.cookie, 'qr')
 
     return {
       status: 'authorized',
       message: '登录成功',
-      user
+      user: authenticated.user,
+      cacheReset: authenticated.cacheReset
     }
   }
 
@@ -75,13 +83,15 @@ export class AuthService {
 
     if (remoteUser) {
       await this.persistUserSecrets(remoteUser)
+      const ownership = this.cacheOwnershipService.ensureOwner(remoteUser.ncmUserId)
       logger.info('登录态检查结果', {
         isLoggedIn: true,
         ncmUserId: remoteUser.ncmUserId
       })
       return {
         isLoggedIn: true,
-        user: remoteUser
+        user: remoteUser,
+        cacheReset: ownership.cacheReset
       }
     }
 
@@ -94,10 +104,11 @@ export class AuthService {
   }
 
   async loginWithCookie(cookie: string): Promise<LoginStatusResult> {
-    const user = await this.saveAuthenticatedCookie(cookie, 'manual_cookie')
+    const authenticated = await this.saveAuthenticatedCookie(cookie, 'manual_cookie')
     return {
       isLoggedIn: true,
-      user
+      user: authenticated.user,
+      cacheReset: authenticated.cacheReset
     }
   }
 
@@ -107,10 +118,11 @@ export class AuthService {
   }
 
   async loginWithWebCookie(cookie: string): Promise<LoginStatusResult> {
-    const user = await this.saveAuthenticatedCookie(cookie, 'web')
+    const authenticated = await this.saveAuthenticatedCookie(cookie, 'web')
     return {
       isLoggedIn: true,
-      user
+      user: authenticated.user,
+      cacheReset: authenticated.cacheReset
     }
   }
 
@@ -149,7 +161,6 @@ export class AuthService {
     await this.secureStorageService.removeSecret(NCM_USER_ID_KEY)
     await this.secureStorageService.removeSecret(NCM_NICKNAME_KEY)
     await this.secureStorageService.removeSecret(NCM_AVATAR_URL_KEY)
-    this.userRepository.clearUsers()
     logger.info('用户退出登录')
   }
 
@@ -188,7 +199,10 @@ export class AuthService {
     return user
   }
 
-  private async saveAuthenticatedCookie(cookie: string, method: LoginMethod): Promise<UserProfile> {
+  private async saveAuthenticatedCookie(
+    cookie: string,
+    method: LoginMethod
+  ): Promise<AuthenticatedUserResult> {
     const normalizedCookie = normalizeCookie(cookie)
 
     if (!normalizedCookie) {
@@ -198,8 +212,12 @@ export class AuthService {
     const user = await this.verifyCookieLogin(normalizedCookie)
     await this.secureStorageService.setSecret(NCM_COOKIE_KEY, normalizedCookie)
     await this.persistUserSecrets(user)
+    const ownership = this.cacheOwnershipService.ensureOwner(user.ncmUserId)
     logger.info('登录成功', { method, ncmUserId: user.ncmUserId, nickname: user.nickname })
-    return user
+    return {
+      user,
+      cacheReset: ownership.cacheReset
+    }
   }
 
   private async persistUserSecrets(user: UserProfile): Promise<void> {
@@ -208,6 +226,8 @@ export class AuthService {
 
     if (user.avatarUrl) {
       await this.secureStorageService.setSecret(NCM_AVATAR_URL_KEY, user.avatarUrl)
+    } else {
+      await this.secureStorageService.removeSecret(NCM_AVATAR_URL_KEY)
     }
   }
 }

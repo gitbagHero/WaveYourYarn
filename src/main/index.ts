@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, dialog, shell } from 'electron'
 import { join } from 'node:path'
 import { is } from '@electron-toolkit/utils'
 import { registerIpcHandlers } from './ipc'
@@ -18,15 +18,19 @@ function createWindow(): void {
     show: false,
     autoHideMenuBar: true,
     webPreferences: {
-      preload: join(__dirname, '../preload/index.mjs'),
+      preload: join(__dirname, '../preload/index.cjs'),
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: false
+      sandbox: true
     }
   })
 
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show()
+  })
+
+  mainWindow.webContents.on('preload-error', (_event, preloadPath, error) => {
+    logger.error(`Preload script failed: ${preloadPath}`, error)
   })
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -48,6 +52,12 @@ app.whenReady().then(() => {
     registerIpcHandlers()
   } catch (error) {
     logger.error('Application initialization failed', error)
+    dialog.showErrorBox(
+      'WaveYourYarn 启动失败',
+      '本地数据库初始化或升级失败。为保护已有数据，应用已停止启动。请查看日志后重试。'
+    )
+    app.quit()
+    return
   }
 
   createWindow()

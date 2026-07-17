@@ -18,7 +18,7 @@ const quickLinks = [
 
 export function DashboardPage(): JSX.Element {
   const version = useAppStore((state) => state.version)
-  const { isLoggedIn, user, checkLoginStatus } = useAuthStore()
+  const { isLoggedIn, user, notice, checkLoginStatus } = useAuthStore()
   const { likedSongs, syncing, lastSyncResult, loadLikedSongs, syncLikedSongs } = useSongStore()
   const { playlists, syncing: playlistsSyncing, loadPlaylists, syncUserPlaylists } = usePlaylistStore()
   const [ping, setPing] = useState('-')
@@ -48,6 +48,9 @@ export function DashboardPage(): JSX.Element {
       </section>
 
       <section className="mt-6 rounded-md border bg-white p-6">
+        {notice ? (
+          <p className="mb-4 rounded-md bg-amber-50 p-3 text-sm text-amber-800">{notice}</p>
+        ) : null}
         {isLoggedIn && user ? (
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">

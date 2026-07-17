@@ -21,6 +21,8 @@ export interface ExportOptions {
   filePath?: string
 }
 
+export type ExportRequestOptions = Omit<ExportOptions, 'filePath'>
+
 export interface ExportResult {
   id: string
   format: ExportFormat

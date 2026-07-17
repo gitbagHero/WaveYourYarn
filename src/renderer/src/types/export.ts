@@ -18,7 +18,6 @@ export interface ExportOptions {
   scope: ExportScope
   keyword?: string
   sortMode: ExportSortMode
-  filePath?: string
 }
 
 export interface ExportResult {

@@ -7,6 +7,7 @@ import { useAuthStore } from '../stores/authStore'
 import { useExportStore } from '../stores/exportStore'
 import { usePlaylistStore } from '../stores/playlistStore'
 import { useSongStore } from '../stores/songStore'
+import { settingsApi } from '../api/settingsApi'
 
 export function SettingsPage(): JSX.Element {
   const version = useAppStore((state) => state.version)
@@ -28,12 +29,53 @@ export function SettingsPage(): JSX.Element {
   } = useExportStore()
   const [sessionMessage, setSessionMessage] = useState<string | null>(null)
   const [cacheMessage, setCacheMessage] = useState<string | null>(null)
+  const [exportDirectory, setExportDirectory] = useState<string | null>(null)
+  const [settingsLoading, setSettingsLoading] = useState(false)
+  const [settingsMessage, setSettingsMessage] = useState<string | null>(null)
 
   useEffect(() => {
     loadLikedSongs()
     loadPlaylists()
     loadRecords()
+    setSettingsLoading(true)
+    settingsApi.getAll().then((result) => {
+      if (result.success) {
+        setExportDirectory(result.data?.default_export_directory ?? null)
+        setSettingsMessage(null)
+      } else {
+        setSettingsMessage(result.message ?? '读取设置失败')
+      }
+      setSettingsLoading(false)
+    })
   }, [loadLikedSongs, loadPlaylists, loadRecords])
+
+  const selectExportDirectory = async (): Promise<void> => {
+    setSettingsLoading(true)
+    setSettingsMessage(null)
+    const result = await settingsApi.selectExportDirectory()
+
+    if (result.success) {
+      setExportDirectory(result.data ?? null)
+      setSettingsMessage(result.data ? '默认导出目录已更新' : null)
+    } else {
+      setSettingsMessage(result.message ?? '选择默认导出目录失败')
+    }
+    setSettingsLoading(false)
+  }
+
+  const resetExportDirectory = async (): Promise<void> => {
+    setSettingsLoading(true)
+    setSettingsMessage(null)
+    const result = await settingsApi.resetExportDirectory()
+
+    if (result.success) {
+      setExportDirectory(null)
+      setSettingsMessage('已恢复使用系统 Downloads 目录')
+    } else {
+      setSettingsMessage(result.message ?? '恢复默认导出目录失败')
+    }
+    setSettingsLoading(false)
+  }
 
   const clearWebLoginSession = async (): Promise<void> => {
     setSessionMessage(null)
@@ -49,8 +91,11 @@ export function SettingsPage(): JSX.Element {
     }
 
     setCacheMessage(null)
-    await clearCache()
-    setCacheMessage('本地歌曲缓存已清空')
+    const cleared = await clearCache()
+
+    if (cleared) {
+      setCacheMessage('“我喜欢的音乐”本地缓存已清空，其他歌单缓存保持不变')
+    }
   }
 
   const clearExportRecords = async (): Promise<void> => {
@@ -115,6 +160,12 @@ export function SettingsPage(): JSX.Element {
               {playlistsLoading ? '读取中...' : `${playlists.length} 个`}
             </dd>
           </div>
+          <div className="flex justify-between gap-6 border-t pt-3">
+            <dt className="text-muted-foreground">默认导出目录</dt>
+            <dd className="max-w-xl break-all text-right font-medium">
+              {settingsLoading ? '读取中...' : exportDirectory ?? '系统 Downloads 目录'}
+            </dd>
+          </div>
         </dl>
 
         {error ? <p className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
@@ -171,9 +222,28 @@ export function SettingsPage(): JSX.Element {
           >
             清空歌单缓存
           </button>
+          <button
+            type="button"
+            disabled={settingsLoading}
+            onClick={() => void selectExportDirectory()}
+            className="rounded-md border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            选择默认导出目录
+          </button>
+          <button
+            type="button"
+            disabled={settingsLoading || !exportDirectory}
+            onClick={() => void resetExportDirectory()}
+            className="rounded-md border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            恢复系统默认目录
+          </button>
         </div>
         {sessionMessage ? <p className="mt-3 text-sm text-muted-foreground">{sessionMessage}</p> : null}
         {cacheMessage ? <p className="mt-3 text-sm text-muted-foreground">{cacheMessage}</p> : null}
+        {settingsMessage ? (
+          <p className="mt-3 text-sm text-muted-foreground">{settingsMessage}</p>
+        ) : null}
       </div>
     </div>
   )

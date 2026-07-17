@@ -10,7 +10,7 @@ function unavailable<T = unknown>(message = 'Electron preload API is unavailable
 
 const browserFallbackApi: WaveYourYarnApi = {
   app: {
-    getVersion: () => Promise.resolve({ success: true, data: '0.2.3-browser-preview' }),
+    getVersion: () => Promise.resolve({ success: true, data: '0.2.4-browser-preview' }),
     ping: () => Promise.resolve({ success: true, data: 'browser-preview' })
   },
   auth: {
@@ -64,7 +64,9 @@ const browserFallbackApi: WaveYourYarnApi = {
   settings: {
     get: () => unavailable(),
     set: () => unavailable(),
-    getAll: () => unavailable()
+    getAll: () => unavailable(),
+    selectExportDirectory: () => unavailable(),
+    resetExportDirectory: () => unavailable()
   }
 }
 
