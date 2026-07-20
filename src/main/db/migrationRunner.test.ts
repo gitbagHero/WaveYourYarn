@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import type Database from 'better-sqlite3'
+import { readFileSync } from 'node:fs'
 import { createTestDatabase } from './testing/createTestDatabase'
 import {
   DATABASE_MIGRATIONS,
@@ -77,6 +78,25 @@ describe('database migrations', () => {
     }
     expect(song.name).toBe('Existing song')
     expect(getAppliedMigrations(db)).toHaveLength(DATABASE_MIGRATIONS.length)
+  })
+
+  it('opens a representative v0.2.4 database without changing user data', () => {
+    const db = createBareTestDatabase()
+    databases.push(db)
+    db.exec(readFileSync(new URL('./testing/fixtures/v0.2.4.sql', import.meta.url), 'utf8'))
+
+    runDatabaseMigrations(db)
+
+    expect(getAppliedMigrations(db)).toHaveLength(DATABASE_MIGRATIONS.length)
+    expect(db.prepare('SELECT name FROM songs WHERE id = ?').get('song-1')).toEqual({
+      name: 'v0.2.4 song'
+    })
+    expect(db.prepare('SELECT COUNT(*) AS count FROM playlist_songs').get()).toEqual({ count: 1 })
+    expect(db.prepare('SELECT value FROM app_settings WHERE key = ?').get('secret:cookie')).toEqual(
+      {
+        value: 'must-not-leak'
+      }
+    )
   })
 
   it('rolls back a failed migration and does not record its version', () => {

@@ -76,6 +76,16 @@ const api: WaveYourYarnApi = {
     getAll: () => ipcRenderer.invoke('settings:get-all'),
     selectExportDirectory: () => ipcRenderer.invoke('settings:select-export-directory'),
     resetExportDirectory: () => ipcRenderer.invoke('settings:reset-export-directory')
+  },
+  backup: {
+    create: () => ipcRenderer.invoke('backup:create'),
+    selectForRestore: () => ipcRenderer.invoke('backup:select-for-restore'),
+    restore: (token: string) =>
+      ipcRenderer.invoke('backup:restore', typeof token === 'string' ? token : '')
+  },
+  diagnostics: {
+    getSummary: () => ipcRenderer.invoke('diagnostics:get-summary'),
+    export: () => ipcRenderer.invoke('diagnostics:export')
   }
 }
 

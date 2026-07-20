@@ -1,14 +1,21 @@
-import { app, BrowserWindow, dialog, shell } from 'electron'
+import { app, BrowserWindow, dialog, session } from 'electron'
 import { join } from 'node:path'
 import { is } from '@electron-toolkit/utils'
 import { registerIpcHandlers } from './ipc'
 import { initializeDatabase } from './db/database'
-import { ensureAppDirectories } from './utils/paths'
-import { logger } from './utils/logger'
+import { ensureAppDirectories, getLogsDir } from './utils/paths'
+import { configureFileLogging, logger } from './utils/logger'
+import { denyAllSessionPermissions, hardenMainWindow } from './security/electronSecurity'
 
 let mainWindow: BrowserWindow | null = null
 
+if (process.env.WYY_E2E_USER_DATA_DIR) {
+  app.setPath('userData', process.env.WYY_E2E_USER_DATA_DIR)
+}
+
 function createWindow(): void {
+  const rendererFilePath = join(__dirname, '../renderer/index.html')
+
   mainWindow = new BrowserWindow({
     title: 'WaveYourYarn',
     width: 1200,
@@ -33,21 +40,23 @@ function createWindow(): void {
     logger.error(`Preload script failed: ${preloadPath}`, error)
   })
 
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url)
-    return { action: 'deny' }
+  hardenMainWindow(mainWindow, {
+    devServerUrl: process.env.ELECTRON_RENDERER_URL,
+    rendererFilePath
   })
 
   if (is.dev && process.env.ELECTRON_RENDERER_URL) {
     mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL)
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    mainWindow.loadFile(rendererFilePath)
   }
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   try {
+    denyAllSessionPermissions(session.defaultSession, 'default')
     ensureAppDirectories()
+    await configureFileLogging(getLogsDir())
     initializeDatabase()
     registerIpcHandlers()
   } catch (error) {

@@ -1,0 +1,260 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="1024"
+     height="1024"
+     viewBox="0 0 1024 1024"
+     fill="none">
+
+  <defs>
+    <!-- 深蓝背景 -->
+    <linearGradient id="background"
+                    x1="124" y1="96"
+                    x2="897" y2="931"
+                    gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#171A74"/>
+      <stop offset="0.52" stop-color="#091B82"/>
+      <stop offset="1" stop-color="#050B3C"/>
+    </linearGradient>
+
+    <!-- 中央蓝色光晕 -->
+    <radialGradient id="centerGlow"
+                    cx="0" cy="0" r="1"
+                    gradientUnits="userSpaceOnUse"
+                    gradientTransform="translate(500 493) rotate(90) scale(338 405)">
+      <stop offset="0" stop-color="#183EEB" stop-opacity="0.74"/>
+      <stop offset="0.42" stop-color="#1234D8" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#0A1A74" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- 音符附近的紫色光晕 -->
+    <radialGradient id="noteGlow"
+                    cx="0" cy="0" r="1"
+                    gradientUnits="userSpaceOnUse"
+                    gradientTransform="translate(295 490) rotate(38) scale(245 200)">
+      <stop offset="0" stop-color="#633BFF" stop-opacity="0.46"/>
+      <stop offset="1" stop-color="#633BFF" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- 图标主渐变 -->
+    <linearGradient id="logoGradient"
+                    x1="137" y1="575"
+                    x2="892" y2="571"
+                    gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#D36CFF"/>
+      <stop offset="0.23" stop-color="#B88CFF"/>
+      <stop offset="0.48" stop-color="#779BFF"/>
+      <stop offset="0.72" stop-color="#68D9FF"/>
+      <stop offset="1" stop-color="#75E8FF"/>
+    </linearGradient>
+
+    <!-- 线条高光 -->
+    <linearGradient id="logoHighlight"
+                    x1="158" y1="480"
+                    x2="898" y2="502"
+                    gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF1FF" stop-opacity="0.82"/>
+      <stop offset="0.46" stop-color="#E4E8FF" stop-opacity="0.56"/>
+      <stop offset="1" stop-color="#E9FFFF" stop-opacity="0.65"/>
+    </linearGradient>
+
+    <!-- 应用图标边缘 -->
+    <linearGradient id="edge"
+                    x1="118" y1="36"
+                    x2="868" y2="987"
+                    gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3835A8" stop-opacity="0.88"/>
+      <stop offset="0.55" stop-color="#20278A" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#252C91" stop-opacity="0.75"/>
+    </linearGradient>
+
+    <!-- 大范围霓虹光晕 -->
+    <filter id="largeGlow"
+            x="-30%" y="-30%"
+            width="160%" height="160%"
+            color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="19"/>
+    </filter>
+
+    <!-- 端点光晕 -->
+    <filter id="smallGlow"
+            x="-20%" y="-20%"
+            width="140%" height="140%"
+            color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+
+    <clipPath id="appClip">
+      <rect x="2" y="2"
+            width="1020" height="1020"
+            rx="176"/>
+    </clipPath>
+  </defs>
+
+  <!-- 应用图标背景 -->
+  <g clip-path="url(#appClip)">
+    <rect x="2" y="2"
+          width="1020" height="1020"
+          rx="176"
+          fill="url(#background)"/>
+
+    <rect x="2" y="2"
+          width="1020" height="1020"
+          rx="176"
+          fill="url(#centerGlow)"/>
+
+    <ellipse cx="309"
+             cy="487"
+             rx="265"
+             ry="237"
+             fill="url(#noteGlow)"/>
+  </g>
+
+  <!-- 圆角边框 -->
+  <rect x="3" y="3"
+        width="1018" height="1018"
+        rx="175"
+        stroke="url(#edge)"
+        stroke-width="3"/>
+
+  <!-- 霓虹外发光 -->
+  <g fill="none"
+     stroke="url(#logoGradient)"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     opacity="0.48"
+     filter="url(#largeGlow)">
+
+    <!-- 音符底部 -->
+    <path stroke-width="37"
+          d="M306 603
+             C306 662 266 695 215 695
+             C165 695 131 663 139 618
+             C147 569 191 536 242 536
+             C273 536 295 549 311 570"/>
+
+    <!-- 音符杆与符尾 -->
+    <path stroke-width="37"
+          d="M306 603
+             V289
+             C306 280 316 275 323 280
+             L391 328
+             C431 356 447 389 443 421
+             C439 458 420 484 397 504"/>
+
+    <!-- 音频波形 -->
+    <path stroke-width="37"
+          d="M306 603
+             C343 643 373 638 402 595
+             C431 552 454 545 470 576
+             C493 620 484 705 510 705
+             C537 705 541 619 550 531
+             C559 445 573 391 597 391
+             C629 391 645 474 650 565
+             C657 676 661 727 682 727
+             C707 727 716 658 723 590
+             C731 515 747 500 766 537
+             C785 573 786 624 807 624
+             C825 624 831 585 842 556
+             C852 531 868 523 881 548
+             C893 570 891 602 906 613
+             C922 625 937 600 947 589
+             C958 578 973 578 992 578"/>
+  </g>
+
+  <!-- 主矢量线条 -->
+  <g fill="none"
+     stroke="url(#logoGradient)"
+     stroke-linecap="round"
+     stroke-linejoin="round">
+
+    <path stroke-width="23"
+          d="M306 603
+             C306 662 266 695 215 695
+             C165 695 131 663 139 618
+             C147 569 191 536 242 536
+             C273 536 295 549 311 570"/>
+
+    <path stroke-width="23"
+          d="M306 603
+             V289
+             C306 280 316 275 323 280
+             L391 328
+             C431 356 447 389 443 421
+             C439 458 420 484 397 504"/>
+
+    <path stroke-width="23"
+          d="M306 603
+             C343 643 373 638 402 595
+             C431 552 454 545 470 576
+             C493 620 484 705 510 705
+             C537 705 541 619 550 531
+             C559 445 573 391 597 391
+             C629 391 645 474 650 565
+             C657 676 661 727 682 727
+             C707 727 716 658 723 590
+             C731 515 747 500 766 537
+             C785 573 786 624 807 624
+             C825 624 831 585 842 556
+             C852 531 868 523 881 548
+             C893 570 891 602 906 613
+             C922 625 937 600 947 589
+             C958 578 973 578 992 578"/>
+  </g>
+
+  <!-- 表面高光 -->
+  <g fill="none"
+     stroke="url(#logoHighlight)"
+     stroke-width="3.5"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     opacity="0.8">
+
+    <path d="M306 603
+             C306 662 266 695 215 695
+             C165 695 131 663 139 618
+             C147 569 191 536 242 536
+             C273 536 295 549 311 570"/>
+
+    <path d="M306 603
+             V289
+             C306 280 316 275 323 280
+             L391 328
+             C431 356 447 389 443 421
+             C439 458 420 484 397 504"/>
+
+    <path d="M306 603
+             C343 643 373 638 402 595
+             C431 552 454 545 470 576
+             C493 620 484 705 510 705
+             C537 705 541 619 550 531
+             C559 445 573 391 597 391
+             C629 391 645 474 650 565
+             C657 676 661 727 682 727
+             C707 727 716 658 723 590
+             C731 515 747 500 766 537
+             C785 573 786 624 807 624
+             C825 624 831 585 842 556
+             C852 531 868 523 881 548
+             C893 570 891 602 906 613
+             C922 625 937 600 947 589
+             C958 578 973 578 992 578"/>
+  </g>
+
+  <!-- 波形末端圆点 -->
+  <circle cx="993"
+          cy="578"
+          r="16"
+          fill="#74E8FF"
+          opacity="0.42"
+          filter="url(#smallGlow)"/>
+
+  <circle cx="993"
+          cy="578"
+          r="10"
+          fill="#75E8FF"/>
+
+  <circle cx="990"
+          cy="575"
+          r="3.2"
+          fill="#EFFFFF"
+          opacity="0.85"/>
+</svg>

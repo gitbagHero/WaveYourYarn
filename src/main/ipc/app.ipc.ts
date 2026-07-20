@@ -1,13 +1,14 @@
-import { app, ipcMain } from 'electron'
+import { app } from 'electron'
 import type { IpcResult } from '../types/common'
+import { registerIpcHandler } from './registerIpcHandler'
 
 export function registerAppIpc(): void {
-  ipcMain.handle('app:get-version', (): IpcResult<string> => ({
+  registerIpcHandler('app:get-version', (): IpcResult<string> => ({
     success: true,
     data: app.getVersion()
   }))
 
-  ipcMain.handle('app:ping', (): IpcResult<string> => ({
+  registerIpcHandler('app:ping', (): IpcResult<string> => ({
     success: true,
     data: 'pong'
   }))

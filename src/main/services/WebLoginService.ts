@@ -1,5 +1,6 @@
 import { BrowserWindow, session } from 'electron'
 import { logger } from '../utils/logger'
+import { denyAllSessionPermissions, hardenNcmLoginWindow } from '../security/electronSecurity'
 
 const NCM_LOGIN_PARTITION = 'persist:ncm-login'
 const NCM_HOME_URL = 'https://music.163.com'
@@ -15,6 +16,7 @@ export class WebLoginService {
     }
 
     const webSession = session.fromPartition(NCM_LOGIN_PARTITION)
+    denyAllSessionPermissions(webSession, 'ncm-login')
 
     if (!this.loginWindow || this.loginWindow.isDestroyed()) {
       this.loginWindow = new BrowserWindow({
@@ -31,6 +33,7 @@ export class WebLoginService {
         }
       })
 
+      hardenNcmLoginWindow(this.loginWindow)
       await this.loginWindow.loadURL(NCM_HOME_URL)
       logger.info('已打开网易云网页登录窗口')
     }

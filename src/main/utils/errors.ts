@@ -1,4 +1,5 @@
 import type { IpcResult } from '../types/common'
+import { redactText } from './redaction'
 
 export function notImplemented(): IpcResult {
   return {
@@ -9,8 +10,8 @@ export function notImplemented(): IpcResult {
 
 export function toErrorMessage(error: unknown): string {
   if (error instanceof Error) {
-    return error.message
+    return redactText(error.message)
   }
 
-  return String(error)
+  return redactText(String(error))
 }

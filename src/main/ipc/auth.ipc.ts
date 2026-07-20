@@ -1,25 +1,25 @@
-import { ipcMain } from 'electron'
 import { AuthService } from '../services/AuthService'
 import type { IpcResult } from '../types/common'
-import { toErrorMessage } from '../utils/errors'
-
-const authService = new AuthService()
+import { toIpcResult } from './ipcResult'
+import { registerIpcHandler } from './registerIpcHandler'
 
 export function registerAuthIpc(): void {
-  ipcMain.handle('auth:open-web-login', async () =>
+  const authService = new AuthService()
+
+  registerIpcHandler('auth:open-web-login', async () =>
     toIpcResult(() => authService.openWebLogin(), '网页登录失败，请重试')
   )
 
-  ipcMain.handle('auth:start-web-login', async () =>
+  registerIpcHandler('auth:start-web-login', async () =>
     toIpcResult(() => authService.openWebLogin(), '网页登录失败，请重试')
   )
 
   // Deprecated: retained as a compatibility alias for older renderer builds.
-  ipcMain.handle('auth:complete-web-login', async () =>
+  registerIpcHandler('auth:complete-web-login', async () =>
     toIpcResult(() => authService.getLoginStatus(), '网页登录验证失败')
   )
 
-  ipcMain.handle('auth:login-with-cookie', async (_event, cookie: unknown) => {
+  registerIpcHandler('auth:login-with-cookie', async (_event, cookie: unknown) => {
     if (typeof cookie !== 'string' || cookie.trim().length === 0) {
       return {
         success: false,
@@ -32,12 +32,12 @@ export function registerAuthIpc(): void {
   })
 
   // Deprecated: QR login is unstable due to NetEase risk control.
-  ipcMain.handle('auth:get-login-qr', async () =>
+  registerIpcHandler('auth:get-login-qr', async () =>
     toIpcResult(() => authService.getLoginQr(), '二维码生成失败')
   )
 
   // Deprecated: QR login is unstable due to NetEase risk control.
-  ipcMain.handle('auth:check-qr-status', async (_event, key: unknown) => {
+  registerIpcHandler('auth:check-qr-status', async (_event, key: unknown) => {
     if (typeof key !== 'string' || key.trim().length === 0) {
       return {
         success: false,
@@ -49,37 +49,22 @@ export function registerAuthIpc(): void {
     return toIpcResult(() => authService.checkQrStatus(key), '二维码状态检查失败')
   })
 
-  ipcMain.handle('auth:get-login-status', async () =>
+  registerIpcHandler('auth:get-login-status', async () =>
     toIpcResult(() => authService.getLoginStatus(), '登录状态检查失败')
   )
 
-  ipcMain.handle('auth:get-current-user', async () =>
+  registerIpcHandler('auth:get-current-user', async () =>
     toIpcResult(() => authService.getCurrentUser(), '当前用户信息获取失败')
   )
 
-  ipcMain.handle('auth:logout', async () =>
+  registerIpcHandler('auth:logout', async () =>
     toIpcResult(async () => {
       await authService.logout()
       await authService.clearWebLoginSession()
     }, '退出登录失败')
   )
 
-  ipcMain.handle('auth:clear-web-login-session', async () =>
+  registerIpcHandler('auth:clear-web-login-session', async () =>
     toIpcResult(() => authService.clearWebLoginSession(), '清理网页登录 Session 失败')
   )
-}
-
-async function toIpcResult<T>(operation: () => Promise<T>, fallbackMessage: string): Promise<IpcResult<T>> {
-  try {
-    return {
-      success: true,
-      data: await operation()
-    }
-  } catch (error) {
-    return {
-      success: false,
-      message: fallbackMessage,
-      error: toErrorMessage(error)
-    }
-  }
 }

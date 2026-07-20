@@ -18,3 +18,13 @@ export function initializeDatabase(): void {
   runDatabaseMigrations(db)
   logger.info('SQLite database initialized')
 }
+
+export function closeDatabase(): void {
+  if (!database) {
+    return
+  }
+
+  database.close()
+  database = null
+  logger.info('SQLite database closed')
+}

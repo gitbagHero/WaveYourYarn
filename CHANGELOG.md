@@ -2,6 +2,32 @@
 
 本项目的重要版本变化记录在此文件中。
 
+## 0.2.5 - 2026-07-20
+
+### Electron 运行时与安全
+
+- 限制主窗口与网易云登录窗口的导航、弹窗、外链和权限请求；
+- 为所有业务 IPC 增加主 frame 与受信 renderer URL 校验；
+- 增加 renderer CSP 和可单元测试的 URL 信任策略；
+- 修复并固化 sandbox preload CommonJS 产物，构建阶段自动验证 bridge；
+- 增加生产构建及 macOS 开发包的 preload、IPC ping、主路由、备份与诊断 E2E。
+
+### 备份与诊断
+
+- 增加带 manifest、SHA-256、schema 和数量摘要的 `.wyybackup` 格式；
+- 使用 SQLite Online Backup 创建不含登录凭据的一致性快照；
+- 恢复前校验完整性、迁移与关系，自动创建应急快照，并在替换失败时回滚；
+- 增加设置页备份、恢复、运行时诊断和主动诊断导出入口；
+- 增加 JSONL 滚动日志，并统一脱敏凭据、URL query 与本地用户目录名。
+
+### 发行与工程质量
+
+- 接入 electron-builder，配置固定 bundle id、asar 原生模块解包及 macOS arm64/x64 构建；
+- 增加应用图标和 macOS 双架构 tag workflow；
+- 拆分导出页面和统计算法，统一 IPC result 封装；
+- 增加代表性 v0.2.4 数据库夹具，以及备份、回滚、脱敏、诊断和结构算法测试；
+- 更新总体路线、开发计划、发布说明和发布前人工回归清单。
+
 ## 0.2.4 - 2026-07-17
 
 ### 稳定性

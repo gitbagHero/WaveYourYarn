@@ -1,6 +1,8 @@
 {
   "name": "waveyouryarn",
-  "version": "0.2.4",
+  "version": "0.2.5",
+  "productName": "WaveYourYarn",
+  "author": "WaveYourYarn contributors",
   "description": "A desktop tool platform for exporting, analyzing, organizing, and migrating personal music preference data.",
   "main": "out/main/index.js",
   "type": "module",
@@ -18,8 +20,14 @@
     "lint": "eslint . --ext .ts,.tsx",
     "test": "node --experimental-sqlite ./node_modules/vitest/vitest.mjs run",
     "test:watch": "node --experimental-sqlite ./node_modules/vitest/vitest.mjs",
+    "test:e2e": "pnpm run build && playwright test",
+    "test:e2e:run": "playwright test",
+    "test:e2e:packaged": "node scripts/run-packaged-e2e.mjs",
     "verify:preload": "node scripts/verify-preload-build.mjs",
     "check": "pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build",
+    "package:dir": "pnpm run build && electron-builder --dir --publish never",
+    "package:mac": "pnpm run build && electron-builder --mac dmg zip --arm64 --x64 --publish never",
+    "icons:build": "node scripts/generate-icons.mjs",
     "format": "prettier --write .",
     "db:init": "echo \"Database is initialized automatically on app startup.\"",
     "rebuild:native": "electron-rebuild -f -w better-sqlite3"
@@ -43,6 +51,7 @@
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/tsconfig": "^1.0.1",
     "@electron/rebuild": "^4.0.6",
+    "@playwright/test": "^1.61.1",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.17",
@@ -51,6 +60,7 @@
     "@typescript-eslint/parser": "^8.18.2",
     "autoprefixer": "^10.4.20",
     "electron": "^33.2.1",
+    "electron-builder": "^26.15.3",
     "electron-vite": "^2.3.0",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
@@ -61,5 +71,30 @@
     "typescript": "^5.7.2",
     "vite": "^5.4.11",
     "vitest": "2.1.9"
+  },
+  "build": {
+    "appId": "com.waveyouryarn.desktop",
+    "productName": "WaveYourYarn",
+    "asar": true,
+    "asarUnpack": [
+      "**/*.node"
+    ],
+    "npmRebuild": true,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "mac": {
+      "category": "public.app-category.music",
+      "icon": "build/icon.icns",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    }
   }
 }

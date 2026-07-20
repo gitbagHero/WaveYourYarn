@@ -1,13 +1,13 @@
-import { ipcMain } from 'electron'
 import { EXPORT_CANCELLED_CODE, ExportService } from '../services/ExportService'
 import type { ExportFormat, ExportOptions, ExportSource } from '../types/export'
 import type { IpcResult } from '../types/common'
 import { toErrorMessage } from '../utils/errors'
-
-const exportService = new ExportService()
+import { registerIpcHandler } from './registerIpcHandler'
 
 export function registerExportIpc(): void {
-  ipcMain.handle('export:songs', async (_event, options: unknown) => {
+  const exportService = new ExportService()
+
+  registerIpcHandler('export:songs', async (_event, options: unknown) => {
     const normalizedOptions = parseExportOptions(options)
 
     if (!normalizedOptions) {
@@ -21,7 +21,7 @@ export function registerExportIpc(): void {
     return toIpcResult(() => exportService.exportSongs(normalizedOptions), '导出失败')
   })
 
-  ipcMain.handle('export:liked-songs', async (_event, options: unknown) => {
+  registerIpcHandler('export:liked-songs', async (_event, options: unknown) => {
     const normalizedOptions = parseExportOptions({
       ...(options && typeof options === 'object' ? options : {}),
       source: { type: 'liked' }
@@ -38,7 +38,7 @@ export function registerExportIpc(): void {
     return toIpcResult(() => exportService.exportLikedSongs(normalizedOptions), '导出失败')
   })
 
-  ipcMain.handle('export:playlist-songs', async (_event, payload: unknown) => {
+  registerIpcHandler('export:playlist-songs', async (_event, payload: unknown) => {
     if (!payload || typeof payload !== 'object') {
       return {
         success: false,
@@ -68,21 +68,21 @@ export function registerExportIpc(): void {
     )
   })
 
-  ipcMain.handle('export:csv', async (_event, options: unknown) =>
-    exportWithFormat('csv', options)
+  registerIpcHandler('export:csv', async (_event, options: unknown) =>
+    exportWithFormat(exportService, 'csv', options)
   )
-  ipcMain.handle('export:json', async (_event, options: unknown) =>
-    exportWithFormat('json', options)
+  registerIpcHandler('export:json', async (_event, options: unknown) =>
+    exportWithFormat(exportService, 'json', options)
   )
-  ipcMain.handle('export:markdown', async (_event, options: unknown) =>
-    exportWithFormat('markdown', options)
+  registerIpcHandler('export:markdown', async (_event, options: unknown) =>
+    exportWithFormat(exportService, 'markdown', options)
   )
 
-  ipcMain.handle('export:get-records', async () =>
+  registerIpcHandler('export:get-records', async () =>
     toIpcResult(() => exportService.getExportRecords(), '读取导出历史失败')
   )
 
-  ipcMain.handle('export:open-file', async (_event, recordId: unknown) => {
+  registerIpcHandler('export:open-file', async (_event, recordId: unknown) => {
     if (typeof recordId !== 'string' || recordId.trim().length === 0) {
       return {
         success: false,
@@ -94,7 +94,7 @@ export function registerExportIpc(): void {
     return toIpcResult(() => exportService.openExportFile(recordId), '打开文件失败')
   })
 
-  ipcMain.handle('export:open-folder', async (_event, recordId: unknown) => {
+  registerIpcHandler('export:open-folder', async (_event, recordId: unknown) => {
     if (typeof recordId !== 'string' || recordId.trim().length === 0) {
       return {
         success: false,
@@ -106,12 +106,16 @@ export function registerExportIpc(): void {
     return toIpcResult(() => exportService.openExportFolder(recordId), '打开所在目录失败')
   })
 
-  ipcMain.handle('export:clear-records', async () =>
+  registerIpcHandler('export:clear-records', async () =>
     toIpcResult(() => exportService.clearExportRecords(), '清空导出历史失败')
   )
 }
 
-async function exportWithFormat(format: ExportFormat, options: unknown): Promise<IpcResult> {
+async function exportWithFormat(
+  exportService: ExportService,
+  format: ExportFormat,
+  options: unknown
+): Promise<IpcResult> {
   const normalizedOptions = parseExportOptions({
     ...(options && typeof options === 'object' ? options : {}),
     format
@@ -181,7 +185,11 @@ function parseExportSource(source: unknown): ExportSource | null {
     return { type: 'liked' }
   }
 
-  if (record.type === 'playlist' && typeof record.playlistId === 'string' && record.playlistId.trim()) {
+  if (
+    record.type === 'playlist' &&
+    typeof record.playlistId === 'string' &&
+    record.playlistId.trim()
+  ) {
     return {
       type: 'playlist',
       playlistId: record.playlistId.trim()
@@ -191,7 +199,10 @@ function parseExportSource(source: unknown): ExportSource | null {
   return null
 }
 
-async function toIpcResult<T>(operation: () => Promise<T>, fallbackMessage: string): Promise<IpcResult<T>> {
+async function toIpcResult<T>(
+  operation: () => Promise<T>,
+  fallbackMessage: string
+): Promise<IpcResult<T>> {
   try {
     return {
       success: true,

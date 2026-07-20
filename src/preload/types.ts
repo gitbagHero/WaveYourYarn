@@ -18,6 +18,12 @@ import type {
 } from '../main/types/playlist'
 import type { PlaylistTrack } from '../main/types/song'
 import type { PublicSettingKey, PublicSettings } from '../main/types/settings'
+import type {
+  BackupCreateResult,
+  BackupRestoreResult,
+  BackupRestoreSelection
+} from '../main/types/backup'
+import type { DiagnosticExportResult, DiagnosticSummary } from '../main/types/diagnostics'
 
 export interface WaveYourYarnApi {
   app: {
@@ -81,5 +87,14 @@ export interface WaveYourYarnApi {
     getAll: () => Promise<IpcResult<PublicSettings>>
     selectExportDirectory: () => Promise<IpcResult<string | null>>
     resetExportDirectory: () => Promise<IpcResult<void>>
+  }
+  backup: {
+    create: () => Promise<IpcResult<BackupCreateResult | null>>
+    selectForRestore: () => Promise<IpcResult<BackupRestoreSelection | null>>
+    restore: (token: string) => Promise<IpcResult<BackupRestoreResult>>
+  }
+  diagnostics: {
+    getSummary: () => Promise<IpcResult<DiagnosticSummary>>
+    export: () => Promise<IpcResult<DiagnosticExportResult | null>>
   }
 }
