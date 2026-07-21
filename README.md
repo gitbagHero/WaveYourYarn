@@ -83,7 +83,7 @@ pnpm run icons:build
 
 - [系统设计](docs/system-design.md)
 - [MVP 任务清单](docs/mvp-task-list.md)
-- [v0.2.4 → v1.0 项目完整规划](docs/project-roadmap.md)
+- [v0.2.5 → v1.0 项目完整规划](docs/project-roadmap.md)
 - [v0.2.5 发行与质量基础开发计划](docs/v0.2.5-plan.md)
 - [v0.2.5 完成度与 v0.3.x 准入审计](docs/v0.2.5-readiness-audit.md)
 - [v0.2.5 发布说明](docs/v0.2.5-release-notes.md)
@@ -93,4 +93,4 @@ pnpm run icons:build
 - [v0.2.4 稳定化计划](docs/v0.2.4-stabilization-plan.md)
 - [版本记录](CHANGELOG.md)
 
-v0.2.5 开发完成并通过自动化后，下一阶段进入 v0.3.x 的 LLM 与可解释 AI 音乐报告开发。当前版本不包含真实 LLM 调用、远端写入或 Apple Music 迁移。
+v0.2.5 的本地检查、Linux CI 和 macOS arm64/x64 打包工作流已经通过，开发与自动化准入闭环完成。下一阶段可以进入 v0.3.x 的 LLM 与可解释 AI 音乐报告开发；当前版本仍不包含真实 LLM 调用、远端写入或 Apple Music 迁移。

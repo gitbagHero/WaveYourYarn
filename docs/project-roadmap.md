@@ -416,7 +416,7 @@ migration_items
 
 目标：让当前数据中心达到可持续扩展、可生成安装包、可定位故障的状态。
 
-状态：代码与本地无凭据自动化已于 2026-07-20 完成并发布首个 GitHub Release；arm64 原生包和 x64 Rosetta 包均通过本地打包态 E2E。2026-07-21 准入审计发现原始 tag workflow 在源码 Electron E2E 前缺少 native rebuild，本地修复和干净安装复测已通过，等待新的远程 run 复核；真实账号人工矩阵继续作为稳定版本发布门禁。
+状态：代码与本地无凭据自动化已于 2026-07-20 完成并发布首个 GitHub Release；arm64 原生包和 x64 Rosetta 包均通过本地打包态 E2E。2026-07-21 准入审计发现并修复原始 tag workflow 在源码 Electron E2E 前缺少 native rebuild；新的 Linux CI 和 macOS arm64/x64 原生 workflow 均通过。v0.2.5 开发与自动化准入闭环完成，真实账号人工矩阵继续作为稳定版本发布门禁。
 
 范围：
 
@@ -975,9 +975,9 @@ main 通过 CI
 
 ### 第一批：关闭 v0.2.5 准入问题
 
-1. 将 Electron E2E native rebuild 修复进入 `main`；
-2. 确认新的 GitHub CI 通过；
-3. 通过 workflow dispatch 复核 macOS arm64/x64 构建；
+1. Electron E2E native rebuild 修复已进入 `main`；
+2. 新的 GitHub CI 已通过；
+3. workflow dispatch 的 macOS arm64/x64 构建已通过；
 4. 保留真实账号与双架构人工矩阵，作为 v0.3.0 稳定发布门禁。
 
 ### 第二批：v0.3.0 数据与安全底座
