@@ -1,5 +1,9 @@
 # WaveYourYarn MVP 开发任务清单
 
+> 文档状态：历史 MVP 设计记录
+>
+> 本文保留项目初始化阶段的原始目标和任务拆解，不再代表当前版本优先级。当前主路线见 `docs/project-roadmap.md`，v1.0/v2.0 范围调整见 `docs/v1-v2-scope-decisions.md`。
+
 ## 1. MVP 目标
 
 WaveYourYarn 的 MVP 阶段目标是先跑通最核心的数据闭环：

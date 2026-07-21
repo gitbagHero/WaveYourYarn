@@ -1,6 +1,6 @@
 # WaveYourYarn
 
-WaveYourYarn 是一个基于 Electron 的个人音乐数据桌面工具，用于同步、整理、统计和导出用户自己的网易云音乐数据。当前稳定版本为 v0.2.5，也是项目的首个 GitHub Release。
+WaveYourYarn 是一个基于 Electron 的个人音乐数据桌面工具，用于只读同步、查看、统计、分析和导出用户自己的网易云音乐数据。当前稳定版本为 v0.2.5，也是项目的首个 GitHub Release。
 
 [下载 WaveYourYarn v0.2.5](https://github.com/gitbagHero/WaveYourYarn/releases/tag/v0.2.5)
 
@@ -17,6 +17,16 @@ WaveYourYarn 是一个基于 Electron 的个人音乐数据桌面工具，用于
 - 在网络不可用时读取当前缓存所属账号的本地数据。
 
 v0.2.5 聚焦发行与质量基础：补齐 Electron 真实运行时 E2E、安全边界、macOS 双架构开发打包、数据库备份恢复和脱敏诊断能力。
+
+## 当前路线
+
+- v0.3.x：用户自由配置 LLM API，生成可解释的 AI 音乐报告、历史与 Markdown/HTML 导出；
+- v0.6.x：扩展到 Windows x64，并完成 macOS/Windows 双平台稳定化；
+- v0.7.x：专门进行 UI 美化、交互状态、可访问性和性能优化；
+- v1.0：功能冻结、跨平台回归后发布未签名的稳定开源 Release；
+- v2.0：统一讨论高级歌单管理、受控新歌单发布和 Apple Music 迁移。
+
+v1.0 的网易云能力永久保持只读，不提供创建、删除、覆盖、重命名、添加或移除远端内容的接口。原 v0.4.x/v0.5.x 已取消在 v1.0 前发布，完整范围迁移到 v2.0。
 
 ## 技术架构
 
@@ -83,14 +93,15 @@ pnpm run icons:build
 
 - [系统设计](docs/system-design.md)
 - [MVP 任务清单](docs/mvp-task-list.md)
-- [v0.2.5 → v1.0 项目完整规划](docs/project-roadmap.md)
+- [v0.2.5 → v2.0 项目完整规划](docs/project-roadmap.md)
 - [v0.2.5 发行与质量基础开发计划](docs/v0.2.5-plan.md)
 - [v0.2.5 完成度与 v0.3.x 准入审计](docs/v0.2.5-readiness-audit.md)
 - [v0.2.5 发布说明](docs/v0.2.5-release-notes.md)
 - [v0.2.5 发布前人工回归清单](docs/v0.2.5-manual-regression.md)
 - [v0.3.x AI 音乐报告详细开发计划](docs/v0.3.x-plan.md)
 - [v0.3.x 产品与技术决策记录](docs/v0.3-decisions.md)
+- [v1.0 / v2.0 范围决策记录](docs/v1-v2-scope-decisions.md)
 - [v0.2.4 稳定化计划](docs/v0.2.4-stabilization-plan.md)
 - [版本记录](CHANGELOG.md)
 
-v0.2.5 的本地检查、Linux CI 和 macOS arm64/x64 打包工作流已经通过，开发与自动化准入闭环完成。下一阶段可以进入 v0.3.x 的 LLM 与可解释 AI 音乐报告开发；当前版本仍不包含真实 LLM 调用、远端写入或 Apple Music 迁移。
+v0.2.5 的本地检查、Linux CI 和 macOS arm64/x64 打包工作流已经通过，开发与自动化准入闭环完成。下一阶段进入 v0.3.x 的 LLM 与可解释 AI 音乐报告开发。Windows x64、UI/UX 收口和 v1.0 Release 依次在 v0.6.x、v0.7.x 和 v1.0 完成；远端歌单与 Apple Music 能力统一推迟到 v2.0。

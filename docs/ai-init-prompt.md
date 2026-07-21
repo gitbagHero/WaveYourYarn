@@ -1,5 +1,9 @@
 # WaveYourYarn 项目初始化提示词
 
+> 文档状态：历史初始化提示词
+>
+> 本文记录项目启动时的原始设想，不再作为当前路线或验收依据。当前主路线见 `docs/project-roadmap.md`，v1.0/v2.0 范围调整见 `docs/v1-v2-scope-decisions.md`。
+
 你现在需要帮助我初始化一个桌面端开源项目，项目名称为 **WaveYourYarn**。
 
 项目含义是：
