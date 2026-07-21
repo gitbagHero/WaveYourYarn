@@ -85,8 +85,11 @@ pnpm run icons:build
 - [MVP 任务清单](docs/mvp-task-list.md)
 - [v0.2.4 → v1.0 项目完整规划](docs/project-roadmap.md)
 - [v0.2.5 发行与质量基础开发计划](docs/v0.2.5-plan.md)
+- [v0.2.5 完成度与 v0.3.x 准入审计](docs/v0.2.5-readiness-audit.md)
 - [v0.2.5 发布说明](docs/v0.2.5-release-notes.md)
 - [v0.2.5 发布前人工回归清单](docs/v0.2.5-manual-regression.md)
+- [v0.3.x AI 音乐报告详细开发计划](docs/v0.3.x-plan.md)
+- [v0.3.x 产品与技术决策记录](docs/v0.3-decisions.md)
 - [v0.2.4 稳定化计划](docs/v0.2.4-stabilization-plan.md)
 - [版本记录](CHANGELOG.md)
 

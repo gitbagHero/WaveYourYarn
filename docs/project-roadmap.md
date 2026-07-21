@@ -1,4 +1,4 @@
-# WaveYourYarn 项目完整规划（v0.2.4 → v1.0）
+# WaveYourYarn 项目完整规划（v0.2.5 → v1.0）
 
 > 文档状态：主路线规划
 >
@@ -416,7 +416,7 @@ migration_items
 
 目标：让当前数据中心达到可持续扩展、可生成安装包、可定位故障的状态。
 
-状态：代码与无凭据自动化已于 2026-07-20 完成并发布首个 GitHub Release；arm64 原生包和 x64 Rosetta 包均通过打包态 E2E，真实账号人工矩阵作为持续兼容性检查保留。
+状态：代码与本地无凭据自动化已于 2026-07-20 完成并发布首个 GitHub Release；arm64 原生包和 x64 Rosetta 包均通过本地打包态 E2E。2026-07-21 准入审计发现原始 tag workflow 在源码 Electron E2E 前缺少 native rebuild，本地修复和干净安装复测已通过，等待新的远程 run 复核；真实账号人工矩阵继续作为稳定版本发布门禁。
 
 范围：
 
@@ -971,34 +971,31 @@ main 通过 CI
 
 ## 17. 下一步执行清单
 
-现在不应直接开始写 AI 页面。推荐按以下顺序启动 v0.2.5：
+当前进入 v0.3.x，详细执行计划见 `docs/v0.3.x-plan.md`。推荐顺序：
 
-### 第一批：发布前事实基线
+### 第一批：关闭 v0.2.5 准入问题
 
-1. 创建 v0.2.5 详细开发计划；
-2. 盘点 macOS 打包、签名、公证所需配置；
-3. 选择 Electron E2E 方案并实现 preload/ping smoke；
-4. 建立真实账号只读回归清单；
-5. 建立 v0.2.4 代表性数据库 fixture；
-6. 定义备份文件格式和恢复前检查规则。
+1. 将 Electron E2E native rebuild 修复进入 `main`；
+2. 确认新的 GitHub CI 通过；
+3. 通过 workflow dispatch 复核 macOS arm64/x64 构建；
+4. 保留真实账号与双架构人工矩阵，作为 v0.3.0 稳定发布门禁。
 
-### 第二批：安全与诊断
+### 第二批：v0.3.0 数据与安全底座
 
-1. 增加导航、外链和权限策略；
-2. 统一 IPC 参数 schema 与 sender 检查；
-3. 增加 CSP；
-4. 实现脱敏日志和诊断导出；
-5. 在设置页展示版本、schema、adapter 和数据路径摘要；
-6. 增加数据库备份与恢复 service。
+1. 按已确认决策实现多 LLM profile、统一 API 配置界面、可记住的披露确认和条件式 PDF；
+2. 收口 migration source；
+3. 将 `MusicAnalysisDataset` 升级为带 schema version、稳定歌曲 ID 和 digest 的 v1 契约；
+4. 实现 schema 7、LLM profile、safeStorage secret 和 JobManager；
+5. 实现 URL policy、main-only transport、protocol registry 和 OpenAI-compatible adapter；
+6. 完成设置、连接测试和数据披露预览。
 
-### 第三批：为 v0.3 解耦
+### 第三批：v0.3.1–v0.3.2 用户成果
 
-1. 引入统一 Job 模型设计，但不提前实现 LLM；
-2. 将 `MusicAnalysisDataset` 标记 schema version；
-3. 拆分过大的页面与 service；
-4. 定义 LLM Provider ADR；
-5. 定义 AI 数据披露和报告 evidence schema；
-6. v0.2.5 发布验收完成后再进入 v0.3.0。
+1. 先生成确定性事实，再生成 LLM 叙事；
+2. 实现 schema 8、报告 schema、evidence 校验和历史；
+3. 实现报告阅读、重命名、删除、重新生成和离线访问；
+4. 实现 Markdown/HTML、隐私预览和报告版本比较；
+5. 完成国内兼容 provider、本地 provider、多 profile 切换与安装包人工回归。
 
 ---
 
@@ -1016,6 +1013,12 @@ main 通过 CI
 8. **Apple Music 先匹配预览后迁移执行**，低置信度必须人工确认；
 9. **用户成果与可重建缓存分开管理**，报告和方案不能因清缓存被误删；
 10. **v1.0 是稳定性里程碑**，不是继续塞入新平台的功能版本。
+11. **v0.3.x 支持多个 LLM profile，但同一时刻只有一个活动 profile**，并提供统一 API 配置和模型管理界面；
+12. **v0.3.x 不提供应用内代理设置**，网络层只负责 URL 安全、超时、取消、重定向和错误分类；
+13. **AI 数据披露默认确认并允许记住**，授权可在设置中撤销，披露范围扩大时必须重新确认；
+14. **v0.3.2 稳定承诺 Markdown/HTML**，PDF 仅在布局与跨平台质量达标后加入。
+
+v0.3.x 决策的完整理由和数据模型影响见 `docs/v0.3-decisions.md`。
 
 ---
 
