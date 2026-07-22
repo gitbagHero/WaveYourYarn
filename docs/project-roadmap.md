@@ -169,7 +169,7 @@ v2.0 再讨论两类高级任务：
 
 ### 4.2 已存在的良好扩展点
 
-- `StatisticsService.getAnalysisDataset()` 已提供最多 300 首的紧凑 AI 输入；
+- `StatisticsService.getAnalysisDataset()` 已提供最近 100 首、带版本与 digest 的紧凑 AI 输入；
 - `src/main/adapters/llm/` 已预留 LLM adapter；
 - `src/main/adapters/apple-music/` 是 v2.0 预留目录，v1.0 不实现；
 - 数据层已经支持后续 migration；
@@ -805,7 +805,7 @@ v2.0.x 高级歌单管理
 - 10,000 首本地歌曲可正常分页、搜索和统计；
 - 页面导航不因全量 JSON 解析长期阻塞；
 - 批量详情和搜索遵守平台限流并可取消；
-- AI 默认输入不超过 300 首紧凑歌曲数据；
+- AI 首版输入固定不超过最近 100 首紧凑歌曲数据；
 - 大型导出使用流式或分块写入评估；
 - 图片、报告和日志不无限增长，提供保留策略。
 

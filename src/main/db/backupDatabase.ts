@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3'
 import { closeDatabase, getDatabase } from './database'
-import { DATABASE_MIGRATIONS, runDatabaseMigrations } from './migrationRunner'
+import { CURRENT_DATABASE_SCHEMA_VERSION, runDatabaseMigrations } from './migrationRunner'
 import type { BackupDataCounts } from '../types/backup'
 
 export interface BackupDatabaseSummary {
@@ -16,7 +16,7 @@ export interface BackupDatabaseGateway {
   closeActiveDatabase(): void
 }
 
-const REQUIRED_TABLES = [
+const BASE_REQUIRED_TABLES = [
   'users',
   'songs',
   'playlists',
@@ -25,10 +25,7 @@ const REQUIRED_TABLES = [
   'app_settings',
   'schema_migrations'
 ]
-const CURRENT_SCHEMA_VERSION = Math.max(
-  ...DATABASE_MIGRATIONS.map((migration) => migration.version)
-)
-
+const SCHEMA_7_REQUIRED_TABLES = ['llm_profiles', 'job_runs', 'ai_disclosure_consents']
 export class SQLiteBackupDatabaseGateway implements BackupDatabaseGateway {
   async createSanitizedSnapshot(destinationPath: string): Promise<BackupDatabaseSummary> {
     await getDatabase().backup(destinationPath)
@@ -52,10 +49,11 @@ export class SQLiteBackupDatabaseGateway implements BackupDatabaseGateway {
 
     try {
       assertDatabaseIntegrity(snapshot)
-      assertRequiredTables(snapshot)
+      assertRequiredTables(snapshot, ['schema_migrations'])
       const schemaVersion = getSchemaVersion(snapshot)
 
       assertSupportedBackupSchema(schemaVersion)
+      assertRequiredTables(snapshot, requiredTablesForSchema(schemaVersion))
 
       assertRelations(snapshot)
       return {
@@ -72,10 +70,11 @@ export class SQLiteBackupDatabaseGateway implements BackupDatabaseGateway {
 
     try {
       assertDatabaseIntegrity(snapshot)
-      assertRequiredTables(snapshot)
+      assertRequiredTables(snapshot, ['schema_migrations'])
       const schemaVersion = getSchemaVersion(snapshot)
 
       assertSupportedBackupSchema(schemaVersion)
+      assertRequiredTables(snapshot, requiredTablesForSchema(schemaVersion))
 
       runDatabaseMigrations(snapshot)
       removeSecrets(snapshot)
@@ -97,7 +96,7 @@ export class SQLiteBackupDatabaseGateway implements BackupDatabaseGateway {
 
 export function assertSupportedBackupSchema(
   schemaVersion: number,
-  currentSchemaVersion = CURRENT_SCHEMA_VERSION
+  currentSchemaVersion = CURRENT_DATABASE_SCHEMA_VERSION
 ): void {
   if (schemaVersion > currentSchemaVersion) {
     throw new Error(`备份数据库版本 ${schemaVersion} 高于当前支持版本 ${currentSchemaVersion}`)
@@ -119,16 +118,22 @@ function assertDatabaseIntegrity(db: Database.Database): void {
   }
 }
 
-function assertRequiredTables(db: Database.Database): void {
+function assertRequiredTables(db: Database.Database, requiredTables: string[]): void {
   const tableRows = db
     .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
     .all() as Array<{ name: string }>
   const tables = new Set(tableRows.map((row) => row.name))
-  const missing = REQUIRED_TABLES.filter((table) => !tables.has(table))
+  const missing = requiredTables.filter((table) => !tables.has(table))
 
   if (missing.length > 0) {
     throw new Error(`备份数据库缺少必要数据表：${missing.join(', ')}`)
   }
+}
+
+function requiredTablesForSchema(schemaVersion: number): string[] {
+  return schemaVersion >= 7
+    ? [...BASE_REQUIRED_TABLES, ...SCHEMA_7_REQUIRED_TABLES]
+    : BASE_REQUIRED_TABLES
 }
 
 function assertRelations(db: Database.Database): void {

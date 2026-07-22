@@ -1,3 +1,5 @@
+import { getDatabase } from '../db/database'
+import { StatisticsRepository } from '../db/repositories/StatisticsRepository'
 import { StatisticsService } from '../services/StatisticsService'
 import type { IpcResult } from '../types/common'
 import type { StatisticsSource } from '../types/statistics'
@@ -5,7 +7,7 @@ import { toIpcResult } from './ipcResult'
 import { registerIpcHandler } from './registerIpcHandler'
 
 export function registerStatisticsIpc(): void {
-  const statisticsService = new StatisticsService()
+  const statisticsService = new StatisticsService(new StatisticsRepository(getDatabase()))
 
   registerIpcHandler('statistics:get-summary', async (_event, source: unknown) => {
     const parsedSource = parseStatisticsSource(source)

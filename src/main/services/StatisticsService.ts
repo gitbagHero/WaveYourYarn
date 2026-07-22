@@ -9,16 +9,20 @@ import type {
 import { logger } from '../utils/logger'
 import { nowIso } from '../utils/time'
 import {
+  ANALYSIS_SONG_LIMIT,
   buildOverview,
   buildTimeDistribution,
   buildTimeSongs,
   buildTopAlbums,
   buildTopArtists,
   dedupeSongs,
+  getAnalysisTimePrecision,
   normalizeSongsForStats,
   sampleAnalysisSongs,
+  selectRecentAnalysisSongs,
   type StatSong
 } from './statistics/statisticsCalculations'
+import { createAnalysisDatasetDigest } from './statistics/analysisDataset'
 
 interface ResolvedStatsSource {
   info: StatisticsSourceInfo
@@ -27,50 +31,14 @@ interface ResolvedStatsSource {
 }
 
 export class StatisticsService {
-  constructor(private readonly statisticsRepository = new StatisticsRepository()) {}
+  constructor(private readonly statisticsRepository: StatisticsRepository) {}
 
   async getMusicStatsSummary(source: StatisticsSource): Promise<MusicStatsSummary> {
     const resolved = this.resolveStatsSource(source)
     const statsSongs = normalizeSongsForStats(resolved.songs, resolved.info.type)
     const uniqueSongs = dedupeSongs(statsSongs, resolved.info.type)
 
-    logger.info('开始生成音乐统计', {
-      sourceType: resolved.info.type,
-      sourceName: resolved.info.name,
-      songCount: statsSongs.length,
-      uniqueSongCount: uniqueSongs.length
-    })
-
-    const overview = buildOverview(
-      statsSongs,
-      uniqueSongs,
-      resolved.info.type,
-      resolved.playlistOverview
-    )
-    const summary: MusicStatsSummary = {
-      source: resolved.info,
-      overview,
-      topArtists: buildTopArtists(uniqueSongs),
-      topAlbums: buildTopAlbums(uniqueSongs),
-      timeDistribution: buildTimeDistribution(uniqueSongs, resolved.info.type),
-      recentSongs: buildTimeSongs(uniqueSongs, resolved.info.type, 'desc'),
-      earliestSongs: buildTimeSongs(uniqueSongs, resolved.info.type, 'asc'),
-      playlistOverview: resolved.playlistOverview,
-      generatedAt: nowIso()
-    }
-
-    logger.info('音乐统计生成完成', {
-      sourceType: resolved.info.type,
-      sourceName: resolved.info.name,
-      songCount: summary.overview.songCount,
-      uniqueSongCount: summary.overview.uniqueSongCount,
-      topArtistCount: summary.topArtists.length,
-      topAlbumCount: summary.topAlbums.length,
-      yearBucketCount: summary.timeDistribution.byYear.length,
-      monthBucketCount: summary.timeDistribution.byMonth.length
-    })
-
-    return summary
+    return this.buildMusicStatsSummary(resolved, statsSongs, uniqueSongs, nowIso())
   }
 
   async getAvailableStatisticsSources(): Promise<StatisticsSourceInfo[]> {
@@ -101,19 +69,96 @@ export class StatisticsService {
 
   async getAnalysisDataset(source: StatisticsSource): Promise<MusicAnalysisDataset> {
     const resolved = this.resolveStatsSource(source)
-    const summary = await this.getMusicStatsSummary(source)
-    const uniqueSongs = dedupeSongs(
-      normalizeSongsForStats(resolved.songs, resolved.info.type),
-      resolved.info.type
+    const normalizedSongs = normalizeSongsForStats(resolved.songs, resolved.info.type)
+    const uniqueSongs = dedupeSongs(normalizedSongs, resolved.info.type)
+    const selectedSongs = selectRecentAnalysisSongs(
+      uniqueSongs,
+      resolved.info.type,
+      ANALYSIS_SONG_LIMIT
     )
-    const compactSongs = sampleAnalysisSongs(uniqueSongs, resolved.info.type)
+    const compactSongs = sampleAnalysisSongs(selectedSongs, resolved.info.type, ANALYSIS_SONG_LIMIT)
+    const generatedAt = nowIso()
+    const scope = {
+      selection: 'most_recent' as const,
+      requestedSongLimit: ANALYSIS_SONG_LIMIT,
+      availableSongCount: uniqueSongs.length,
+      includedSongCount: selectedSongs.length,
+      truncated: selectedSongs.length < uniqueSongs.length,
+      timePrecision: getAnalysisTimePrecision(selectedSongs, resolved.info.type)
+    }
+    const summary = this.buildMusicStatsSummary(
+      resolved,
+      selectedSongs,
+      selectedSongs,
+      generatedAt,
+      false
+    )
+    const digest = createAnalysisDatasetDigest({
+      schemaVersion: 1,
+      source: summary.source,
+      scope,
+      compactSongs
+    })
 
     return {
+      schemaVersion: 1,
       source: summary.source,
+      scope,
       summary,
       compactSongs,
-      generatedAt: nowIso()
+      digest,
+      generatedAt
     }
+  }
+
+  private buildMusicStatsSummary(
+    resolved: ResolvedStatsSource,
+    statsSongs: StatSong[],
+    uniqueSongs: StatSong[],
+    generatedAt: string,
+    writeLogs = true
+  ): MusicStatsSummary {
+    if (writeLogs) {
+      logger.info('开始生成音乐统计', {
+        sourceType: resolved.info.type,
+        sourceName: resolved.info.name,
+        songCount: statsSongs.length,
+        uniqueSongCount: uniqueSongs.length
+      })
+    }
+
+    const overview = buildOverview(
+      statsSongs,
+      uniqueSongs,
+      resolved.info.type,
+      resolved.playlistOverview
+    )
+    const summary: MusicStatsSummary = {
+      source: resolved.info,
+      overview,
+      topArtists: buildTopArtists(uniqueSongs),
+      topAlbums: buildTopAlbums(uniqueSongs),
+      timeDistribution: buildTimeDistribution(uniqueSongs, resolved.info.type),
+      recentSongs: buildTimeSongs(uniqueSongs, resolved.info.type, 'desc'),
+      earliestSongs: buildTimeSongs(uniqueSongs, resolved.info.type, 'asc'),
+      playlistOverview: resolved.playlistOverview,
+      generatedAt
+    }
+
+    if (writeLogs) {
+      logger.info('音乐统计生成完成', {
+        sourceType: resolved.info.type,
+        sourceName: resolved.info.name,
+        songCount: summary.overview.songCount,
+        uniqueSongCount: summary.overview.uniqueSongCount,
+        topArtistCount: summary.topArtists.length,
+        topAlbumCount: summary.topAlbums.length,
+        yearBucketCount: summary.timeDistribution.byYear.length,
+        monthBucketCount: summary.timeDistribution.byMonth.length
+      })
+    }
+
+    return summary
   }
 
   private resolveStatsSource(source: StatisticsSource): ResolvedStatsSource {

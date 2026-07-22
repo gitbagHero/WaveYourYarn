@@ -1,5 +1,4 @@
 import type { Database } from 'better-sqlite3'
-import { getDatabase } from '../database'
 import type { Playlist, PlaylistType } from '../../types/playlist'
 import type { LikedSong, PlaylistTrack } from '../../types/song'
 import type { PlaylistStatsOverview } from '../../types/statistics'
@@ -45,7 +44,7 @@ interface PlaylistCountRow {
 }
 
 export class StatisticsRepository {
-  constructor(private readonly db: Database = getDatabase()) {}
+  constructor(private readonly db: Database) {}
 
   getLikedSongsForStats(): LikedSong[] {
     const rows = this.db
@@ -146,9 +145,8 @@ export class StatisticsRepository {
   }
 
   getPlaylistById(playlistId: string): Playlist | null {
-    const row = this.db
-      .prepare('SELECT * FROM playlists WHERE id = ?')
-      .get(playlistId) as PlaylistRow | undefined
+    const row = this.db.prepare('SELECT * FROM playlists WHERE id = ?').get(playlistId) as
+      PlaylistRow | undefined
 
     return row ? fromPlaylistRow(row) : null
   }

@@ -8,6 +8,7 @@ let database: Database.Database | null = null
 export function getDatabase(): Database.Database {
   if (!database) {
     database = new Database(getDatabasePath())
+    database.pragma('foreign_keys = ON')
   }
 
   return database

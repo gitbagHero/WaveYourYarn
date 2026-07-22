@@ -29,6 +29,7 @@ try {
     '--publish',
     'never'
   ])
+  runPnpm(['run', 'verify:dev-llm-boundary', '--', 'release/mac-arm64', 'release/mac'])
 } catch (error) {
   packagingError = error
 } finally {

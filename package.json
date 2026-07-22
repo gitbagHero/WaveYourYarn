@@ -14,7 +14,10 @@
   },
   "scripts": {
     "dev": "electron-vite dev",
-    "build": "pnpm run typecheck && electron-vite build && pnpm run verify:preload",
+    "dev:llm-check": "node --import tsx scripts/check-development-llm-connection.ts",
+    "dev:llm-report": "node --experimental-sqlite --import tsx scripts/run-development-ai-report.ts",
+    "dev:llm-report:dry": "node --experimental-sqlite --import tsx scripts/run-development-ai-report.ts --dry-run",
+    "build": "pnpm run typecheck && electron-vite build && pnpm run verify:preload && pnpm run verify:dev-llm-boundary",
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
     "lint": "eslint . --ext .ts,.tsx",
@@ -24,8 +27,10 @@
     "test:e2e:run": "pnpm run rebuild:native && playwright test",
     "test:e2e:packaged": "node scripts/run-packaged-e2e.mjs",
     "verify:preload": "node scripts/verify-preload-build.mjs",
+    "verify:dev-llm-boundary": "node scripts/verify-dev-llm-boundary.mjs",
+    "verify:dev-llm-package-boundary": "node scripts/verify-dev-llm-boundary.mjs --current-package",
     "check": "pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build",
-    "package:dir": "pnpm run build && electron-builder --dir --publish never",
+    "package:dir": "pnpm run build && electron-builder --dir --publish never && pnpm run verify:dev-llm-package-boundary",
     "package:mac": "node scripts/package-macos.mjs",
     "icons:build": "node scripts/generate-icons.mjs",
     "format": "prettier --write .",
@@ -50,6 +55,7 @@
   "devDependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/tsconfig": "^1.0.1",
+    "@electron/asar": "3.4.1",
     "@electron/rebuild": "^4.0.6",
     "@playwright/test": "^1.61.1",
     "@types/better-sqlite3": "^7.6.12",
@@ -68,6 +74,7 @@
     "postcss": "^8.4.49",
     "prettier": "^3.4.2",
     "tailwindcss": "^3.4.17",
+    "tsx": "^4.23.1",
     "typescript": "^5.7.2",
     "vite": "^5.4.11",
     "vitest": "2.1.9"
@@ -85,7 +92,9 @@
     },
     "files": [
       "out/**/*",
-      "package.json"
+      "package.json",
+      "!**/.env",
+      "!**/.env.*"
     ],
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "mac": {

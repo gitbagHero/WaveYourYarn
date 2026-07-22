@@ -7,6 +7,7 @@ const { DatabaseSync } = require('node:sqlite') as typeof import('node:sqlite')
 
 export function createTestDatabase(): Database.Database {
   const sqlite = new DatabaseSync(':memory:')
+  sqlite.exec('PRAGMA foreign_keys = ON')
 
   Object.defineProperty(sqlite, 'transaction', {
     value: <Result>(operation: () => Result) => {

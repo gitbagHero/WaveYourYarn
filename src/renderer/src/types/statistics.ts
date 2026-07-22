@@ -1,7 +1,5 @@
 export type StatisticsSource =
-  | { type: 'liked' }
-  | { type: 'playlist'; playlistId: string }
-  | { type: 'all' }
+  { type: 'liked' } | { type: 'playlist'; playlistId: string } | { type: 'all' }
 
 export type StatisticsSourceType = StatisticsSource['type']
 export type StatisticsTimeField = 'likedAt' | 'addedAt' | 'mixed' | 'none'
@@ -89,6 +87,7 @@ export interface MusicStatsSummary {
 }
 
 export interface CompactSongForAnalysis {
+  ncmSongId: string
   name: string
   artists: string[]
   album?: string
@@ -96,9 +95,23 @@ export interface CompactSongForAnalysis {
   orderIndex?: number
 }
 
+export type AnalysisTimePrecision = 'source_timestamp' | 'mixed' | 'order_only' | 'none'
+
+export interface MusicAnalysisScope {
+  selection: 'most_recent'
+  requestedSongLimit: number
+  availableSongCount: number
+  includedSongCount: number
+  truncated: boolean
+  timePrecision: AnalysisTimePrecision
+}
+
 export interface MusicAnalysisDataset {
+  schemaVersion: 1
   source: StatisticsSourceInfo
+  scope: MusicAnalysisScope
   summary: MusicStatsSummary
   compactSongs: CompactSongForAnalysis[]
+  digest: string
   generatedAt: string
 }

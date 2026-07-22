@@ -8,6 +8,12 @@ export interface DatabaseMigration {
   up: (db: Database) => void
 }
 
+/**
+ * The authoritative database migration registry.
+ *
+ * Published migrations are append-only. Do not recreate a second registry in
+ * SQL files or mutate an existing version after it has shipped.
+ */
 export const DATABASE_MIGRATIONS: DatabaseMigration[] = [
   {
     version: 1,
@@ -64,8 +70,115 @@ export const DATABASE_MIGRATIONS: DatabaseMigration[] = [
           ON export_records (created_at DESC);
       `)
     }
+  },
+  {
+    version: 7,
+    name: 'llm profiles jobs and disclosure consents',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE llm_profiles (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL CHECK (length(trim(name)) BETWEEN 1 AND 80),
+          protocol TEXT NOT NULL CHECK (length(trim(protocol)) > 0),
+          base_url TEXT NOT NULL CHECK (length(trim(base_url)) > 0),
+          model_id TEXT NOT NULL CHECK (length(trim(model_id)) > 0),
+          timeout_ms INTEGER NOT NULL CHECK (timeout_ms BETWEEN 1000 AND 900000),
+          output_mode TEXT NOT NULL CHECK (
+            output_mode IN ('json_schema', 'json_object', 'prompt_json')
+          ),
+          language TEXT NOT NULL DEFAULT 'zh-CN' CHECK (length(trim(language)) > 0),
+          max_input_songs INTEGER NOT NULL DEFAULT 100 CHECK (
+            max_input_songs BETWEEN 1 AND 100
+          ),
+          secret_ref TEXT NOT NULL UNIQUE CHECK (length(trim(secret_ref)) > 0),
+          is_active INTEGER NOT NULL DEFAULT 0 CHECK (is_active IN (0, 1)),
+          last_tested_at TEXT,
+          last_test_status TEXT CHECK (
+            last_test_status IS NULL OR last_test_status IN ('succeeded', 'failed')
+          ),
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+
+        CREATE UNIQUE INDEX idx_llm_profiles_single_active
+          ON llm_profiles (is_active)
+          WHERE is_active = 1;
+        CREATE INDEX idx_llm_profiles_updated
+          ON llm_profiles (updated_at DESC);
+
+        CREATE TABLE job_runs (
+          id TEXT PRIMARY KEY,
+          kind TEXT NOT NULL CHECK (length(trim(kind)) > 0),
+          profile_id TEXT REFERENCES llm_profiles(id) ON DELETE SET NULL,
+          status TEXT NOT NULL CHECK (
+            status IN ('pending', 'running', 'succeeded', 'failed', 'cancelled', 'interrupted')
+          ),
+          stage TEXT NOT NULL CHECK (length(trim(stage)) > 0),
+          progress_current INTEGER,
+          progress_total INTEGER,
+          input_summary_json TEXT NOT NULL DEFAULT '{}' CHECK (json_valid(input_summary_json)),
+          error_code TEXT,
+          safe_message TEXT,
+          retry_of_job_id TEXT REFERENCES job_runs(id) ON DELETE SET NULL,
+          created_at TEXT NOT NULL,
+          started_at TEXT,
+          finished_at TEXT,
+          CHECK (
+            (progress_current IS NULL AND progress_total IS NULL)
+            OR (
+              progress_current IS NOT NULL
+              AND progress_total IS NOT NULL
+              AND progress_current >= 0
+              AND progress_total >= 0
+              AND progress_current <= progress_total
+            )
+          )
+        );
+
+        CREATE INDEX idx_job_runs_status_created
+          ON job_runs (status, created_at DESC);
+        CREATE INDEX idx_job_runs_profile_created
+          ON job_runs (profile_id, created_at DESC);
+        CREATE INDEX idx_job_runs_retry
+          ON job_runs (retry_of_job_id);
+
+        CREATE TABLE ai_disclosure_consents (
+          id TEXT PRIMARY KEY,
+          profile_id TEXT NOT NULL REFERENCES llm_profiles(id) ON DELETE CASCADE,
+          target_origin TEXT NOT NULL CHECK (length(trim(target_origin)) > 0),
+          protocol TEXT NOT NULL CHECK (length(trim(protocol)) > 0),
+          source_type TEXT NOT NULL CHECK (source_type IN ('liked', 'playlist', 'all')),
+          source_id TEXT,
+          fields_hash TEXT NOT NULL CHECK (length(trim(fields_hash)) > 0),
+          max_input_songs INTEGER NOT NULL CHECK (max_input_songs BETWEEN 1 AND 100),
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          CHECK (
+            (source_type = 'playlist' AND source_id IS NOT NULL AND length(trim(source_id)) > 0)
+            OR (source_type IN ('liked', 'all') AND source_id IS NULL)
+          )
+        );
+
+        CREATE UNIQUE INDEX idx_ai_disclosure_consents_scope
+          ON ai_disclosure_consents (
+            profile_id,
+            target_origin,
+            protocol,
+            source_type,
+            ifnull(source_id, ''),
+            fields_hash,
+            max_input_songs
+          );
+        CREATE INDEX idx_ai_disclosure_consents_profile_updated
+          ON ai_disclosure_consents (profile_id, updated_at DESC);
+      `)
+    }
   }
 ]
+
+export const CURRENT_DATABASE_SCHEMA_VERSION = Math.max(
+  ...DATABASE_MIGRATIONS.map((migration) => migration.version)
+)
 
 export function runDatabaseMigrations(
   db: Database,
@@ -140,6 +253,18 @@ function validateMigrations(migrations: DatabaseMigration[]): void {
       throw new Error(`数据库迁移版本重复：${migration.version}`)
     }
 
+    if (!migration.name.trim()) {
+      throw new Error(`数据库迁移名称不能为空：v${migration.version}`)
+    }
+
     versions.add(migration.version)
+  }
+
+  const orderedVersions = [...versions].sort((a, b) => a - b)
+  for (const [index, version] of orderedVersions.entries()) {
+    const expectedVersion = index + 1
+    if (version !== expectedVersion) {
+      throw new Error(`数据库迁移版本不连续：期望 v${expectedVersion}，实际 v${version}`)
+    }
   }
 }

@@ -1,6 +1,7 @@
 import type { LikedSong, PlaylistTrack } from '../../types/song'
 import type {
   AlbumStat,
+  AnalysisTimePrecision,
   ArtistStat,
   CompactSongForAnalysis,
   MusicStatsOverview,
@@ -12,7 +13,7 @@ import type {
 
 const TOP_LIMIT = 20
 const SONG_TIME_LIMIT = 20
-const ANALYSIS_SONG_LIMIT = 300
+export const ANALYSIS_SONG_LIMIT = 100
 
 export type StatSong = LikedSong | PlaylistTrack
 
@@ -214,22 +215,50 @@ export function dedupeSongs(songs: StatSong[], sourceType: StatisticsSourceType)
 
 export function sampleAnalysisSongs(
   songs: StatSong[],
-  sourceType: StatisticsSourceType
+  sourceType: StatisticsSourceType,
+  limit = ANALYSIS_SONG_LIMIT
 ): CompactSongForAnalysis[] {
-  return [...songs]
-    .sort((a, b) => {
-      const aTime = getSongTime(a, sourceType) ?? 0
-      const bTime = getSongTime(b, sourceType) ?? 0
-      return bTime - aTime
-    })
-    .slice(0, ANALYSIS_SONG_LIMIT)
-    .map((song) => ({
-      name: song.name,
-      artists: song.artists,
-      album: song.album,
-      time: getSongTime(song, sourceType) ?? undefined,
-      orderIndex: song.orderIndex
-    }))
+  return selectRecentAnalysisSongs(songs, sourceType, limit).map((song) => ({
+    ncmSongId: song.ncmSongId,
+    name: song.name,
+    artists: song.artists,
+    album: song.album,
+    time: getSongTime(song, sourceType) ?? undefined,
+    orderIndex: song.orderIndex
+  }))
+}
+
+export function selectRecentAnalysisSongs(
+  songs: StatSong[],
+  sourceType: StatisticsSourceType,
+  limit = ANALYSIS_SONG_LIMIT
+): StatSong[] {
+  const safeLimit = Math.max(0, Math.min(ANALYSIS_SONG_LIMIT, Math.floor(limit)))
+
+  return [...songs].sort((a, b) => compareSongsByRecency(a, b, sourceType)).slice(0, safeLimit)
+}
+
+export function getAnalysisTimePrecision(
+  songs: StatSong[],
+  sourceType: StatisticsSourceType
+): AnalysisTimePrecision {
+  if (songs.length === 0) {
+    return 'none'
+  }
+
+  const timestampCount = songs.filter(
+    (song) => typeof getSongTime(song, sourceType) === 'number'
+  ).length
+
+  if (timestampCount === songs.length) {
+    return 'source_timestamp'
+  }
+
+  if (timestampCount > 0) {
+    return 'mixed'
+  }
+
+  return songs.some((song) => Number.isFinite(song.orderIndex)) ? 'order_only' : 'none'
 }
 
 export function getSongTime(song: StatSong, sourceType: StatisticsSourceType): number | null {
@@ -249,6 +278,25 @@ export function getSongTime(song: StatSong, sourceType: StatisticsSourceType): n
   }
 
   return likedAt ?? addedAt
+}
+
+function compareSongsByRecency(a: StatSong, b: StatSong, sourceType: StatisticsSourceType): number {
+  const aTime = getSongTime(a, sourceType)
+  const bTime = getSongTime(b, sourceType)
+
+  if (aTime !== null && bTime !== null && aTime !== bTime) {
+    return bTime - aTime
+  }
+
+  if (aTime !== null && bTime === null) {
+    return -1
+  }
+
+  if (aTime === null && bTime !== null) {
+    return 1
+  }
+
+  return a.orderIndex - b.orderIndex || a.ncmSongId.localeCompare(b.ncmSongId)
 }
 
 function formatMonth(timestamp: number): string {

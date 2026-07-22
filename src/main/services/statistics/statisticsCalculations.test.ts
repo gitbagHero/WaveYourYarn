@@ -6,8 +6,10 @@ import {
   buildTopAlbums,
   buildTopArtists,
   dedupeSongs,
+  getAnalysisTimePrecision,
   getSongTime,
-  sampleAnalysisSongs
+  sampleAnalysisSongs,
+  selectRecentAnalysisSongs
 } from './statisticsCalculations'
 
 describe('statistics calculations', () => {
@@ -49,16 +51,35 @@ describe('statistics calculations', () => {
     })
   })
 
-  it('caps analysis samples at 300 newest songs', () => {
-    const songs = Array.from({ length: 305 }, (_, index) =>
+  it('caps analysis samples at 100 newest songs and includes stable song IDs', () => {
+    const songs = Array.from({ length: 105 }, (_, index) =>
       likedSong(String(index), `Song ${index}`, index, index + 1)
     )
 
     const sample = sampleAnalysisSongs(songs, 'liked')
 
-    expect(sample).toHaveLength(300)
-    expect(sample[0].name).toBe('Song 304')
+    expect(sample).toHaveLength(100)
+    expect(sample[0]).toMatchObject({ ncmSongId: '104', name: 'Song 104' })
     expect(sample.at(-1)?.name).toBe('Song 5')
+  })
+
+  it('uses source time first and order as a deterministic fallback', () => {
+    const newerWithoutTime = likedSong('order-new', 'Order New', 0, 0)
+    newerWithoutTime.likedAt = undefined
+    const olderWithoutTime = likedSong('order-old', 'Order Old', 1, 0)
+    olderWithoutTime.likedAt = undefined
+    const timestamped = likedSong('timed', 'Timed', 9, 100)
+
+    const selected = selectRecentAnalysisSongs(
+      [olderWithoutTime, newerWithoutTime, timestamped],
+      'liked'
+    )
+
+    expect(selected.map((song) => song.ncmSongId)).toEqual(['timed', 'order-new', 'order-old'])
+    expect(getAnalysisTimePrecision(selected, 'liked')).toBe('mixed')
+    expect(getAnalysisTimePrecision([newerWithoutTime, olderWithoutTime], 'liked')).toBe(
+      'order_only'
+    )
   })
 })
 

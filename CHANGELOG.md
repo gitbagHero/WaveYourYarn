@@ -4,6 +4,16 @@
 
 ## Unreleased
 
+### v0.3 LLM 基础
+
+- 建立 development-only OpenAI-compatible 配置、Chat Completions adapter 和 Release 泄露门禁；
+- 将分析数据升级为 `MusicAnalysisDatasetV1`，固定最近 100 首、稳定歌曲 ID、时间精度与 SHA-256 digest；
+- 增加音乐偏好人格报告调研、确定性事实层、报告 JSON 契约、安全提示词和 evidence 校验；
+- 增加本地 mock provider contract tests 与只读真实 provider smoke runner，并用 JSON Mode 完成最近 100 首报告的受控人工验证；
+- 将数据库迁移收口为单一注册表，并加入 schema 7 的 LLM profile、任务运行和数据披露授权表；
+- 增加公开配置与系统安全存储分离的 profile 服务，以及可取消、可恢复、错误脱敏的 JobManager；
+- 增加公网 HTTPS/本机地址策略、DNS 与重定向复核的 main-only 网络层、统一 Provider 接口和协议注册表；
+
 ### 项目路线
 
 - 将 v1.0 范围收敛为网易云只读数据、统计、LLM 音乐报告、报告历史与导出；

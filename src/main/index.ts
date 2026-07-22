@@ -6,6 +6,7 @@ import { initializeDatabase } from './db/database'
 import { ensureAppDirectories, getLogsDir } from './utils/paths'
 import { configureFileLogging, logger } from './utils/logger'
 import { denyAllSessionPermissions, hardenMainWindow } from './security/electronSecurity'
+import { JobManager } from './services/JobManager'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -58,6 +59,10 @@ app.whenReady().then(async () => {
     ensureAppDirectories()
     await configureFileLogging(getLogsDir())
     initializeDatabase()
+    const interruptedJobCount = new JobManager().recoverInterruptedJobs()
+    if (interruptedJobCount > 0) {
+      logger.info(`Marked ${interruptedJobCount} unfinished AI job(s) as interrupted`)
+    }
     registerIpcHandlers()
   } catch (error) {
     logger.error('Application initialization failed', error)

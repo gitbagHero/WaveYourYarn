@@ -3,6 +3,7 @@ import type Database from 'better-sqlite3'
 import { readFileSync } from 'node:fs'
 import { createTestDatabase } from './testing/createTestDatabase'
 import {
+  CURRENT_DATABASE_SCHEMA_VERSION,
   DATABASE_MIGRATIONS,
   getAppliedMigrations,
   runDatabaseMigrations,
@@ -25,9 +26,22 @@ describe('database migrations', () => {
     expect(getAppliedMigrations(db).map((migration) => migration.version)).toEqual(
       DATABASE_MIGRATIONS.map((migration) => migration.version)
     )
+    expect(CURRENT_DATABASE_SCHEMA_VERSION).toBe(7)
+    expect(DATABASE_MIGRATIONS.map(({ version, name }) => ({ version, name }))).toEqual([
+      { version: 1, name: 'initial schema' },
+      { version: 2, name: 'playlist song added time' },
+      { version: 3, name: 'export record scope and sort mode' },
+      { version: 4, name: 'extended playlist metadata' },
+      { version: 5, name: 'export record source metadata' },
+      { version: 6, name: 'query indexes' },
+      { version: 7, name: 'llm profiles jobs and disclosure consents' }
+    ])
     expect(columnNames(db, 'playlist_songs')).toContain('added_at')
     expect(columnNames(db, 'export_records')).toEqual(
       expect.arrayContaining(['scope', 'sort_mode', 'source_type', 'source_id', 'source_name'])
+    )
+    expect(tableNames(db)).toEqual(
+      expect.arrayContaining(['llm_profiles', 'job_runs', 'ai_disclosure_consents'])
     )
 
     runDatabaseMigrations(db)
@@ -99,12 +113,130 @@ describe('database migrations', () => {
     )
   })
 
+  it('upgrades a schema 6 database to schema 7 without changing existing data', () => {
+    const db = createBareTestDatabase()
+    databases.push(db)
+    const schemaSixMigrations = DATABASE_MIGRATIONS.filter(({ version }) => version <= 6)
+    runDatabaseMigrations(db, schemaSixMigrations)
+    db.prepare(
+      `INSERT INTO songs (
+        id, ncm_song_id, name, artists_json, created_at, updated_at
+      ) VALUES ('schema-6-song', '600', 'Schema 6 song', '[]', 'now', 'now')`
+    ).run()
+
+    runDatabaseMigrations(db)
+
+    expect(db.prepare('SELECT name FROM songs WHERE id = ?').get('schema-6-song')).toEqual({
+      name: 'Schema 6 song'
+    })
+    expect(getAppliedMigrations(db).at(-1)?.version).toBe(7)
+    expect(tableNames(db)).toEqual(
+      expect.arrayContaining(['llm_profiles', 'job_runs', 'ai_disclosure_consents'])
+    )
+  })
+
+  it('enforces profile, progress and disclosure ownership constraints', () => {
+    const db = createTestDatabase()
+    databases.push(db)
+    const insertProfile = db.prepare(
+      `INSERT INTO llm_profiles (
+        id, name, protocol, base_url, model_id, timeout_ms, output_mode, language,
+        max_input_songs, secret_ref, is_active, created_at, updated_at
+      ) VALUES (
+        @id, @name, 'openai_chat_completions', 'https://llm.example.test/v1', 'test-model',
+        60000, 'json_object', 'zh-CN', @maxInputSongs, @secretRef, @isActive, 'now', 'now'
+      )`
+    )
+    insertProfile.run({
+      id: 'profile-1',
+      name: 'Primary',
+      maxInputSongs: 100,
+      secretRef: 'llm-profile:profile-1:api-key',
+      isActive: 1
+    })
+
+    expect(() =>
+      insertProfile.run({
+        id: 'profile-2',
+        name: 'Second active',
+        maxInputSongs: 100,
+        secretRef: 'llm-profile:profile-2:api-key',
+        isActive: 1
+      })
+    ).toThrow()
+    expect(() =>
+      insertProfile.run({
+        id: 'profile-too-large',
+        name: 'Too large',
+        maxInputSongs: 101,
+        secretRef: 'llm-profile:profile-too-large:api-key',
+        isActive: 0
+      })
+    ).toThrow()
+
+    db.prepare(
+      `INSERT INTO ai_disclosure_consents (
+        id, profile_id, target_origin, protocol, source_type, source_id,
+        fields_hash, max_input_songs, created_at, updated_at
+      ) VALUES (
+        'consent-1', 'profile-1', 'https://llm.example.test',
+        'openai_chat_completions', 'liked', NULL, 'sha256:fields', 100, 'now', 'now'
+      )`
+    ).run()
+    db.prepare(
+      `INSERT INTO job_runs (
+        id, kind, profile_id, status, stage, progress_current, progress_total,
+        input_summary_json, created_at
+      ) VALUES (
+        'job-1', 'llm_connection_test', 'profile-1', 'running', 'requesting',
+        0, 1, '{}', 'now'
+      )`
+    ).run()
+
+    expect(() =>
+      db
+        .prepare(
+          `INSERT INTO ai_disclosure_consents (
+          id, profile_id, target_origin, protocol, source_type, source_id,
+          fields_hash, max_input_songs, created_at, updated_at
+        ) VALUES (
+          'orphan', 'missing-profile', 'https://llm.example.test',
+          'openai_chat_completions', 'liked', NULL, 'sha256:fields', 100, 'now', 'now'
+        )`
+        )
+        .run()
+    ).toThrow()
+    expect(() =>
+      db
+        .prepare(
+          `INSERT INTO job_runs (
+          id, kind, status, stage, progress_current, progress_total,
+          input_summary_json, created_at
+        ) VALUES (
+          'invalid-progress', 'llm_connection_test', 'running', 'requesting',
+          2, 1, '{}', 'now'
+        )`
+        )
+        .run()
+    ).toThrow()
+
+    db.prepare('DELETE FROM llm_profiles WHERE id = ?').run('profile-1')
+    expect(db.prepare('SELECT COUNT(*) AS count FROM ai_disclosure_consents').get()).toEqual({
+      count: 0
+    })
+    expect(db.prepare('SELECT profile_id FROM job_runs WHERE id = ?').get('job-1')).toEqual({
+      profile_id: null
+    })
+  })
+
   it('rolls back a failed migration and does not record its version', () => {
     const db = createBareTestDatabase()
     databases.push(db)
+    const failedVersion = CURRENT_DATABASE_SCHEMA_VERSION + 1
     const migrations: DatabaseMigration[] = [
+      ...DATABASE_MIGRATIONS,
       {
-        version: 99,
+        version: failedVersion,
         name: 'intentional failure',
         up: (database) => {
           database.exec('CREATE TABLE should_rollback (id TEXT);')
@@ -113,12 +245,38 @@ describe('database migrations', () => {
       }
     ]
 
-    expect(() => runDatabaseMigrations(db, migrations)).toThrow('数据库迁移失败：v99')
-    expect(getAppliedMigrations(db)).toEqual([])
+    expect(() => runDatabaseMigrations(db, migrations)).toThrow(`数据库迁移失败：v${failedVersion}`)
+    expect(getAppliedMigrations(db).map(({ version }) => version)).toEqual(
+      DATABASE_MIGRATIONS.map(({ version }) => version)
+    )
     const table = db
       .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'should_rollback'")
       .get()
     expect(table).toBeUndefined()
+  })
+
+  it('rejects duplicate, missing and unnamed migration registry entries before applying them', () => {
+    const db = createBareTestDatabase()
+    databases.push(db)
+    const noop = (): void => undefined
+
+    expect(() =>
+      runDatabaseMigrations(db, [
+        { version: 1, name: 'one', up: noop },
+        { version: 1, name: 'duplicate', up: noop }
+      ])
+    ).toThrow('数据库迁移版本重复：1')
+
+    expect(() =>
+      runDatabaseMigrations(db, [
+        { version: 1, name: 'one', up: noop },
+        { version: 3, name: 'three', up: noop }
+      ])
+    ).toThrow('数据库迁移版本不连续：期望 v2，实际 v3')
+
+    expect(() => runDatabaseMigrations(db, [{ version: 1, name: '  ', up: noop }])).toThrow(
+      '数据库迁移名称不能为空：v1'
+    )
   })
 })
 
@@ -128,9 +286,20 @@ function columnNames(db: Database.Database, tableName: string): string[] {
   )
 }
 
+function tableNames(db: Database.Database): string[] {
+  return (
+    db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as Array<{
+      name: string
+    }>
+  ).map(({ name }) => name)
+}
+
 function createBareTestDatabase(): Database.Database {
   const db = createTestDatabase()
   db.exec(`
+    DROP TABLE ai_disclosure_consents;
+    DROP TABLE job_runs;
+    DROP TABLE llm_profiles;
     DROP TABLE schema_migrations;
     DROP TABLE export_records;
     DROP TABLE playlist_songs;
