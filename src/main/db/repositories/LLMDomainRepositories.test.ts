@@ -76,8 +76,13 @@ describe('LLM domain repositories', () => {
 
     jobs.create(jobFixture('job-2'))
     expect(jobs.markRunning('job-2', 'requesting', '2026-01-01T00:00:04.000Z')).toBe(true)
-    expect(jobs.interruptRunning('2026-01-01T00:00:05.000Z')).toBe(1)
+    jobs.create(jobFixture('job-3'))
+    expect(jobs.interruptUnfinished('2026-01-01T00:00:05.000Z')).toBe(2)
     expect(jobs.findById('job-2')).toMatchObject({
+      status: 'interrupted',
+      errorCode: 'JOB_INTERRUPTED'
+    })
+    expect(jobs.findById('job-3')).toMatchObject({
       status: 'interrupted',
       errorCode: 'JOB_INTERRUPTED'
     })

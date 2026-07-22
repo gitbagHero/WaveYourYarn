@@ -35,6 +35,18 @@ export class JobRunRepository {
     ).map(fromRow)
   }
 
+  findUnfinishedForProfile(profileId: string, kind: JobRunKind): JobRun | null {
+    const row = this.db
+      .prepare(
+        `SELECT * FROM job_runs
+         WHERE profile_id = ? AND kind = ? AND status IN ('pending', 'running')
+         ORDER BY created_at DESC, id DESC
+         LIMIT 1`
+      )
+      .get(profileId, kind) as JobRunRow | undefined
+    return row ? fromRow(row) : null
+  }
+
   markRunning(id: string, stage: string, startedAt: string): boolean {
     return this.updateWhereStatus(
       `UPDATE job_runs
@@ -83,13 +95,13 @@ export class JobRunRepository {
     )
   }
 
-  interruptRunning(finishedAt: string): number {
+  interruptUnfinished(finishedAt: string): number {
     return this.db
       .prepare(
         `UPDATE job_runs
          SET status = 'interrupted', stage = 'interrupted', finished_at = ?,
              error_code = 'JOB_INTERRUPTED', safe_message = '应用退出前任务未完成'
-         WHERE status = 'running'`
+         WHERE status IN ('pending', 'running')`
       )
       .run(finishedAt).changes
   }

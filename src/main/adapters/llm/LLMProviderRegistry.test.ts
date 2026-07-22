@@ -14,7 +14,8 @@ describe('LLMProviderRegistry', () => {
       baseUrl: 'https://llm.example.test/v1/',
       modelId: 'model-a',
       apiKey: 'fake-key',
-      timeoutMs: 10_000
+      timeoutMs: 10_000,
+      outputMode: 'json_object'
     })
 
     await expect(created.createChatCompletion({ messages: [] })).resolves.toBe('ok')
@@ -22,7 +23,8 @@ describe('LLMProviderRegistry', () => {
       baseUrl: 'https://llm.example.test/v1/',
       modelId: 'model-a',
       apiKey: 'fake-key',
-      timeoutMs: 10_000
+      timeoutMs: 10_000,
+      outputMode: 'json_object'
     })
   })
 
@@ -33,5 +35,22 @@ describe('LLMProviderRegistry', () => {
     expect(() => registry.register('openai_chat_completions', factory)).toThrow(
       'already registered'
     )
+  })
+
+  it('rejects output modes not implemented by the selected protocol', () => {
+    const registry = new LLMProviderRegistry()
+    registry.register('openai_chat_completions', () => ({
+      createChatCompletion: async () => 'ok'
+    }))
+
+    expect(() =>
+      registry.create('openai_chat_completions', {
+        baseUrl: 'https://llm.example.test/v1/',
+        modelId: 'model-a',
+        apiKey: 'fake-key',
+        timeoutMs: 10_000,
+        outputMode: 'json_schema'
+      })
+    ).toThrow('not supported')
   })
 })

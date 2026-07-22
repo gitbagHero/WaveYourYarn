@@ -10,6 +10,7 @@ import { useSongStore } from '../stores/songStore'
 import { settingsApi } from '../api/settingsApi'
 import { BackupPanel } from '../components/settings/BackupPanel'
 import { DiagnosticsPanel } from '../components/settings/DiagnosticsPanel'
+import { LLMProfilesPanel } from '../components/settings/LLMProfilesPanel'
 
 export function SettingsPage(): JSX.Element {
   const version = useAppStore((state) => state.version)
@@ -247,6 +248,7 @@ export function SettingsPage(): JSX.Element {
           <p className="mt-3 text-sm text-muted-foreground">{settingsMessage}</p>
         ) : null}
       </div>
+      <LLMProfilesPanel />
       <BackupPanel />
       <DiagnosticsPanel />
     </div>

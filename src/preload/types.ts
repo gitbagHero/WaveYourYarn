@@ -24,6 +24,16 @@ import type {
   BackupRestoreSelection
 } from '../main/types/backup'
 import type { DiagnosticExportResult, DiagnosticSummary } from '../main/types/diagnostics'
+import type {
+  CreateLLMProfileRequest,
+  JobRun,
+  LLMJobIdRequest,
+  LLMProfileIdRequest,
+  LLMProtocolOption,
+  PublicLLMProfile,
+  SetLLMProfileApiKeyRequest,
+  UpdateLLMProfileRequest
+} from '../main/types/llm'
 
 export interface WaveYourYarnApi {
   app: {
@@ -58,7 +68,10 @@ export interface WaveYourYarnApi {
     syncPlaylistSongs: (playlistId: string) => Promise<IpcResult<SyncPlaylistSongsResult>>
     syncAllPlaylistSongs: () => Promise<IpcResult<SyncAllPlaylistSongsResult>>
     getPlaylistSongs: (playlistId: string) => Promise<IpcResult<PlaylistTrack[]>>
-    searchPlaylistSongs: (playlistId: string, keyword: string) => Promise<IpcResult<PlaylistTrack[]>>
+    searchPlaylistSongs: (
+      playlistId: string,
+      keyword: string
+    ) => Promise<IpcResult<PlaylistTrack[]>>
     clearPlaylistSongsCache: (playlistId: string) => Promise<IpcResult<void>>
   }
   export: {
@@ -96,5 +109,22 @@ export interface WaveYourYarnApi {
   diagnostics: {
     getSummary: () => Promise<IpcResult<DiagnosticSummary>>
     export: () => Promise<IpcResult<DiagnosticExportResult | null>>
+  }
+  llmProfiles: {
+    list: () => Promise<IpcResult<PublicLLMProfile[]>>
+    getActive: () => Promise<IpcResult<PublicLLMProfile | null>>
+    getProtocolOptions: () => Promise<IpcResult<LLMProtocolOption[]>>
+    create: (request: CreateLLMProfileRequest) => Promise<IpcResult<PublicLLMProfile>>
+    update: (request: UpdateLLMProfileRequest) => Promise<IpcResult<PublicLLMProfile>>
+    delete: (request: LLMProfileIdRequest) => Promise<IpcResult<boolean>>
+    setActive: (request: LLMProfileIdRequest) => Promise<IpcResult<PublicLLMProfile>>
+    setApiKey: (request: SetLLMProfileApiKeyRequest) => Promise<IpcResult<void>>
+    deleteApiKey: (request: LLMProfileIdRequest) => Promise<IpcResult<void>>
+    testConnection: (request: LLMProfileIdRequest) => Promise<IpcResult<JobRun>>
+  }
+  llmJobs: {
+    list: () => Promise<IpcResult<JobRun[]>>
+    get: (request: LLMJobIdRequest) => Promise<IpcResult<JobRun>>
+    cancel: (request: LLMJobIdRequest) => Promise<IpcResult<boolean>>
   }
 }

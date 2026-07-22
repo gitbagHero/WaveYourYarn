@@ -52,6 +52,14 @@ describe('LLMProfileService', () => {
         maxInputSongs: 101
       })
     ).rejects.toMatchObject({ code: 'INVALID_PROFILE' })
+    await expect(
+      service.create({
+        name: 'Unsupported mode',
+        baseUrl: 'https://example.test/v1',
+        modelId: 'model-a',
+        outputMode: 'json_schema'
+      })
+    ).rejects.toMatchObject({ code: 'INVALID_PROFILE' })
   })
 
   it('rotates credentials and promotes a remaining profile after deletion', async () => {

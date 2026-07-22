@@ -1,7 +1,9 @@
 import type { IpcResult } from '../../../main/types/common'
 import type { WaveYourYarnApi } from '../../../preload/types'
 
-function unavailable<T = unknown>(message = 'Electron preload API is unavailable.'): Promise<IpcResult<T>> {
+function unavailable<T = unknown>(
+  message = 'Electron preload API is unavailable.'
+): Promise<IpcResult<T>> {
   return Promise.resolve({
     success: false,
     message
@@ -76,6 +78,23 @@ const browserFallbackApi: WaveYourYarnApi = {
   diagnostics: {
     getSummary: () => unavailable(),
     export: () => unavailable()
+  },
+  llmProfiles: {
+    list: () => unavailable(),
+    getActive: () => unavailable(),
+    getProtocolOptions: () => unavailable(),
+    create: () => unavailable(),
+    update: () => unavailable(),
+    delete: () => unavailable(),
+    setActive: () => unavailable(),
+    setApiKey: () => unavailable(),
+    deleteApiKey: () => unavailable(),
+    testConnection: () => unavailable()
+  },
+  llmJobs: {
+    list: () => unavailable(),
+    get: () => unavailable(),
+    cancel: () => unavailable()
   }
 }
 

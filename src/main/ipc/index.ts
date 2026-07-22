@@ -7,6 +7,8 @@ import { registerPlaylistsIpc } from './playlists.ipc'
 import { registerStatisticsIpc } from './statistics.ipc'
 import { registerBackupIpc } from './backup.ipc'
 import { registerDiagnosticsIpc } from './diagnostics.ipc'
+import { registerLLMProfilesIpc } from './llmProfiles.ipc'
+import { createLLMIpcServices, registerLLMJobsIpc } from './llmJobs.ipc'
 
 export function registerIpcHandlers(): void {
   registerAppIpc()
@@ -18,4 +20,7 @@ export function registerIpcHandlers(): void {
   registerSettingsIpc()
   registerBackupIpc()
   registerDiagnosticsIpc()
+  const llmServices = createLLMIpcServices()
+  registerLLMProfilesIpc(llmServices.profileService)
+  registerLLMJobsIpc(llmServices)
 }

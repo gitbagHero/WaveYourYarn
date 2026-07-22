@@ -3,6 +3,7 @@ import { LLMProfileRepository } from '../db/repositories/LLMProfileRepository'
 import {
   LLM_OUTPUT_MODES,
   LLM_PROTOCOLS,
+  isLLMOutputModeSupported,
   type LLMOutputMode,
   type LLMProfileRecord,
   type LLMProtocol,
@@ -199,6 +200,9 @@ function normalizeProfileInput(
   }
   if (!LLM_OUTPUT_MODES.includes(outputMode)) {
     throw invalidProfile('不支持的模型输出模式')
+  }
+  if (!isLLMOutputModeSupported(protocol, outputMode)) {
+    throw invalidProfile('当前模型接口协议尚不支持所选输出模式')
   }
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1_000 || timeoutMs > 900_000) {
     throw invalidProfile('请求超时必须为 1000 至 900000 毫秒之间的整数')

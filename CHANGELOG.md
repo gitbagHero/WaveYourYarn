@@ -13,6 +13,9 @@
 - 将数据库迁移收口为单一注册表，并加入 schema 7 的 LLM profile、任务运行和数据披露授权表；
 - 增加公开配置与系统安全存储分离的 profile 服务，以及可取消、可恢复、错误脱敏的 JobManager；
 - 增加公网 HTTPS/本机地址策略、DNS 与重定向复核的 main-only 网络层、统一 Provider 接口和协议注册表；
+- 增加严格校验的 LLM Profile IPC、typed preload 与设置界面，API Key 仅通过独立通道进入系统安全存储；
+- 增加不发送音乐数据、可轮询和取消的最小连接测试，并阻止同一 Profile 重复产生测试请求；
+- 将校验后的 DNS 地址固定到实际 socket 连接，同时恢复应用退出前遗留的 pending/running 任务；
 
 ### 项目路线
 

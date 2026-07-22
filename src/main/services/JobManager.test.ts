@@ -72,12 +72,18 @@ describe('JobManager', () => {
 
   it('recovers unfinished jobs and rejects raw prompts in persisted summaries', () => {
     const { manager, repository } = createManager(databases)
-    const job = manager.createJob('llm_connection_test', {
+    const pendingJob = manager.createJob('llm_connection_test', {
       inputSummary: { sendsMusicData: false }
     })
-    expect(repository.markRunning(job.id, 'requesting', '2026-01-01T00:00:09.000Z')).toBe(true)
-    expect(manager.recoverInterruptedJobs()).toBe(1)
-    expect(repository.findById(job.id)).toMatchObject({ status: 'interrupted' })
+    const runningJob = manager.createJob('llm_connection_test', {
+      inputSummary: { sendsMusicData: false }
+    })
+    expect(repository.markRunning(runningJob.id, 'requesting', '2026-01-01T00:00:09.000Z')).toBe(
+      true
+    )
+    expect(manager.recoverInterruptedJobs()).toBe(2)
+    expect(repository.findById(pendingJob.id)).toMatchObject({ status: 'interrupted' })
+    expect(repository.findById(runningJob.id)).toMatchObject({ status: 'interrupted' })
 
     expect(() =>
       manager.createJob('ai_report_generation', {

@@ -1,5 +1,5 @@
 import type { RuntimeLLMProfile } from '../../services/LLMProfileService'
-import type { LLMProtocol } from '../../types/llm'
+import { isLLMOutputModeSupported, type LLMOutputMode, type LLMProtocol } from '../../types/llm'
 import { normalizeExternalBaseUrl } from '../../security/externalUrlPolicy'
 import type { LLMProvider } from './LLMProvider'
 import { OpenAICompatibleProvider } from './OpenAICompatibleProvider'
@@ -9,6 +9,7 @@ export interface LLMProviderRuntimeConfig {
   modelId: string
   apiKey: string
   timeoutMs: number
+  outputMode: LLMOutputMode
 }
 
 export type LLMProviderFactory = (config: LLMProviderRuntimeConfig) => LLMProvider
@@ -28,6 +29,9 @@ export class LLMProviderRegistry {
     if (!factory) {
       throw new Error(`LLM protocol is not registered: ${protocol}`)
     }
+    if (!isLLMOutputModeSupported(protocol, config.outputMode)) {
+      throw new Error(`LLM output mode is not supported by ${protocol}: ${config.outputMode}`)
+    }
     return factory(config)
   }
 
@@ -36,7 +40,8 @@ export class LLMProviderRegistry {
       baseUrl: runtime.profile.baseUrl,
       modelId: runtime.profile.modelId,
       apiKey: runtime.apiKey,
-      timeoutMs: runtime.profile.timeoutMs
+      timeoutMs: runtime.profile.timeoutMs,
+      outputMode: runtime.profile.outputMode
     })
   }
 }

@@ -59,7 +59,7 @@ export class JobManager {
   ) {}
 
   recoverInterruptedJobs(): number {
-    return this.repository.interruptRunning(this.clock())
+    return this.repository.interruptUnfinished(this.clock())
   }
 
   createJob(kind: JobRunKind, input: CreateJobInput): JobRun {

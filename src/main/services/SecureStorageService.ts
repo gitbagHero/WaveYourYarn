@@ -6,6 +6,13 @@ const SECRET_PREFIX = 'secret:'
 const SAFE_STORAGE_PREFIX = 'safe:'
 const PLAIN_STORAGE_PREFIX = 'plain:'
 
+export class SecureStorageError extends Error {
+  constructor(message = '系统安全存储当前不可用') {
+    super(message)
+    this.name = 'SecureStorageError'
+  }
+}
+
 export class SecureStorageService {
   constructor(private readonly settingsRepository = new SettingsRepository()) {}
 
@@ -19,7 +26,7 @@ export class SecureStorageService {
     }
 
     logger.warn('safeStorage is unavailable; refusing to persist a plaintext secret')
-    throw new Error('系统安全存储当前不可用，无法安全保存登录凭证')
+    throw new SecureStorageError('系统安全存储当前不可用，无法安全保存凭证')
   }
 
   async getSecret(key: string): Promise<string | null> {

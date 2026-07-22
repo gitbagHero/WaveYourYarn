@@ -86,6 +86,23 @@ const api: WaveYourYarnApi = {
   diagnostics: {
     getSummary: () => ipcRenderer.invoke('diagnostics:get-summary'),
     export: () => ipcRenderer.invoke('diagnostics:export')
+  },
+  llmProfiles: {
+    list: () => ipcRenderer.invoke('llm-profiles:list'),
+    getActive: () => ipcRenderer.invoke('llm-profiles:get-active'),
+    getProtocolOptions: () => ipcRenderer.invoke('llm-profiles:get-protocol-options'),
+    create: (request) => ipcRenderer.invoke('llm-profiles:create', request),
+    update: (request) => ipcRenderer.invoke('llm-profiles:update', request),
+    delete: (request) => ipcRenderer.invoke('llm-profiles:delete', request),
+    setActive: (request) => ipcRenderer.invoke('llm-profiles:set-active', request),
+    setApiKey: (request) => ipcRenderer.invoke('llm-profiles:set-api-key', request),
+    deleteApiKey: (request) => ipcRenderer.invoke('llm-profiles:delete-api-key', request),
+    testConnection: (request) => ipcRenderer.invoke('llm-profiles:test-connection', request)
+  },
+  llmJobs: {
+    list: () => ipcRenderer.invoke('llm-jobs:list'),
+    get: (request) => ipcRenderer.invoke('llm-jobs:get', request),
+    cancel: (request) => ipcRenderer.invoke('llm-jobs:cancel', request)
   }
 }
 
