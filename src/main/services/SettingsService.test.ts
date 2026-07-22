@@ -27,8 +27,24 @@ describe('SettingsService public settings boundary', () => {
     repository.set('liked_songs_last_sync_result', '{"secret":true}')
     const service = new SettingsService(repository)
 
-    expect(service.getAll()).toEqual({ default_export_directory: '/exports' })
+    expect(service.getAll()).toEqual({
+      default_export_directory: '/exports',
+      ai_disclosure_confirmation_mode: 'allow_remembered'
+    })
     expect(() => service.get('secret:ncm_cookie' as never)).toThrow('不支持的设置项')
+  })
+
+  it('validates the public AI disclosure confirmation mode', async () => {
+    const db = createTestDatabase()
+    databases.push(db)
+    const service = new SettingsService(new SettingsRepository(db))
+
+    expect(service.get('ai_disclosure_confirmation_mode')).toBe('allow_remembered')
+    await service.set('ai_disclosure_confirmation_mode', 'always')
+    expect(service.getAll().ai_disclosure_confirmation_mode).toBe('always')
+    await expect(service.set('ai_disclosure_confirmation_mode', 'sometimes')).rejects.toThrow(
+      'AI 数据披露确认模式无效'
+    )
   })
 
   it('accepts a writable directory and falls back when the configured path is unavailable', async () => {

@@ -2,18 +2,34 @@ import { constants } from 'node:fs'
 import { access, stat } from 'node:fs/promises'
 import { isAbsolute } from 'node:path'
 import { SettingsRepository } from '../db/repositories/SettingsRepository'
-import type { PublicSettingKey, PublicSettings } from '../types/settings'
+import {
+  AI_DISCLOSURE_CONFIRMATION_MODES,
+  type AIDisclosureConfirmationMode,
+  type PublicSettingKey,
+  type PublicSettings
+} from '../types/settings'
 import { logger } from '../utils/logger'
 
 export const DEFAULT_EXPORT_DIRECTORY_KEY: PublicSettingKey = 'default_export_directory'
-const PUBLIC_SETTING_KEYS = new Set<PublicSettingKey>([DEFAULT_EXPORT_DIRECTORY_KEY])
+export const AI_DISCLOSURE_CONFIRMATION_MODE_KEY: PublicSettingKey =
+  'ai_disclosure_confirmation_mode'
+export const DEFAULT_AI_DISCLOSURE_CONFIRMATION_MODE: AIDisclosureConfirmationMode =
+  'allow_remembered'
+const PUBLIC_SETTING_KEYS = new Set<PublicSettingKey>([
+  DEFAULT_EXPORT_DIRECTORY_KEY,
+  AI_DISCLOSURE_CONFIRMATION_MODE_KEY
+])
 
 export class SettingsService {
   constructor(private readonly settingsRepository = new SettingsRepository()) {}
 
   get(key: PublicSettingKey): string | null {
     assertPublicSettingKey(key)
-    return this.settingsRepository.get(key)
+    const value = this.settingsRepository.get(key)
+    if (key === AI_DISCLOSURE_CONFIRMATION_MODE_KEY) {
+      return isAIDisclosureConfirmationMode(value) ? value : DEFAULT_AI_DISCLOSURE_CONFIRMATION_MODE
+    }
+    return value
   }
 
   async set(key: PublicSettingKey, value: string): Promise<void> {
@@ -21,6 +37,8 @@ export class SettingsService {
 
     if (key === DEFAULT_EXPORT_DIRECTORY_KEY) {
       await assertWritableDirectory(value)
+    } else if (!isAIDisclosureConfirmationMode(value)) {
+      throw new Error('AI 数据披露确认模式无效')
     }
 
     this.settingsRepository.set(key, value.trim())
@@ -33,10 +51,14 @@ export class SettingsService {
 
   getAll(): PublicSettings {
     const defaultExportDirectory = this.settingsRepository.get(DEFAULT_EXPORT_DIRECTORY_KEY)
+    const confirmationMode = this.get(
+      AI_DISCLOSURE_CONFIRMATION_MODE_KEY
+    ) as AIDisclosureConfirmationMode
 
-    return defaultExportDirectory
-      ? { default_export_directory: defaultExportDirectory }
-      : {}
+    return {
+      ...(defaultExportDirectory ? { default_export_directory: defaultExportDirectory } : {}),
+      ai_disclosure_confirmation_mode: confirmationMode
+    }
   }
 
   async resolveDefaultExportDirectory(fallbackDirectory: string): Promise<string> {
@@ -54,6 +76,13 @@ export class SettingsService {
       return fallbackDirectory
     }
   }
+}
+
+function isAIDisclosureConfirmationMode(value: unknown): value is AIDisclosureConfirmationMode {
+  return (
+    typeof value === 'string' &&
+    AI_DISCLOSURE_CONFIRMATION_MODES.includes(value as AIDisclosureConfirmationMode)
+  )
 }
 
 export function isPublicSettingKey(value: unknown): value is PublicSettingKey {

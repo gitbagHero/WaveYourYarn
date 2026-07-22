@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  parseAIDisclosureConfirmationMode,
+  parseAIDisclosurePreviewRequest,
+  parseAuthorizeAIDisclosureRequest,
   parseCreateLLMProfileRequest,
   parseLLMProfileIdRequest,
   parseSetLLMProfileApiKeyRequest,
@@ -55,5 +58,39 @@ describe('LLM IPC validators', () => {
     expect(() =>
       parseSetLLMProfileApiKeyRequest({ id: 'profile-1', apiKey: 'key', modelId: 'injected' })
     ).toThrow()
+  })
+
+  it('strictly validates disclosure sources, confirmation and preference requests', () => {
+    expect(
+      parseAIDisclosurePreviewRequest({
+        profileId: 'profile-1',
+        source: { type: 'playlist', playlistId: 'playlist-1' }
+      })
+    ).toEqual({
+      profileId: 'profile-1',
+      source: { type: 'playlist', playlistId: 'playlist-1' }
+    })
+    expect(() =>
+      parseAIDisclosurePreviewRequest({
+        profileId: 'profile-1',
+        source: { type: 'liked', playlistId: 'smuggled' }
+      })
+    ).toThrow()
+    expect(
+      parseAuthorizeAIDisclosureRequest({
+        previewId: 'preview-1',
+        confirmed: true,
+        remember: false
+      })
+    ).toEqual({ previewId: 'preview-1', confirmed: true, remember: false })
+    expect(() =>
+      parseAuthorizeAIDisclosureRequest({
+        previewId: 'preview-1',
+        confirmed: 'true',
+        remember: false
+      })
+    ).toThrowError(expect.objectContaining({ code: 'AI_DISCLOSURE_INVALID' }))
+    expect(parseAIDisclosureConfirmationMode({ confirmationMode: 'always' })).toBe('always')
+    expect(() => parseAIDisclosureConfirmationMode({ confirmationMode: 'sometimes' })).toThrow()
   })
 })

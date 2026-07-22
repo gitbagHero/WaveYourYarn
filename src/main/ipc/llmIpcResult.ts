@@ -4,6 +4,7 @@ import { ExternalUrlPolicyError } from '../security/externalUrlPolicy'
 import { JobExecutionError } from '../services/JobManager'
 import { LLMProfileServiceError } from '../services/LLMProfileService'
 import { SecureStorageError } from '../services/SecureStorageService'
+import { AIDisclosureError } from '../services/AIDisclosureService'
 import { logger } from '../utils/logger'
 import { LLMIpcValidationError } from './llmValidators'
 
@@ -38,6 +39,9 @@ function toSafeLLMFailure(error: unknown): { message: string; error: string } {
   }
   if (error instanceof SecureStorageError) {
     return { message: error.message, error: 'LLM_SECRET_UNAVAILABLE' }
+  }
+  if (error instanceof AIDisclosureError) {
+    return { message: error.message, error: error.code }
   }
   if (error instanceof LLMProviderError) {
     return { message: error.message, error: error.code }

@@ -103,6 +103,13 @@ const api: WaveYourYarnApi = {
     list: () => ipcRenderer.invoke('llm-jobs:list'),
     get: (request) => ipcRenderer.invoke('llm-jobs:get', request),
     cancel: (request) => ipcRenderer.invoke('llm-jobs:cancel', request)
+  },
+  aiDisclosure: {
+    getPreferences: () => ipcRenderer.invoke('ai-disclosure:get-preferences'),
+    setPreferences: (request) => ipcRenderer.invoke('ai-disclosure:set-preferences', request),
+    revokeRemembered: () => ipcRenderer.invoke('ai-disclosure:revoke-remembered'),
+    preview: (request) => ipcRenderer.invoke('ai-disclosure:preview', request),
+    authorize: (request) => ipcRenderer.invoke('ai-disclosure:authorize', request)
   }
 }
 

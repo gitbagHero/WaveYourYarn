@@ -11,6 +11,7 @@ import { settingsApi } from '../api/settingsApi'
 import { BackupPanel } from '../components/settings/BackupPanel'
 import { DiagnosticsPanel } from '../components/settings/DiagnosticsPanel'
 import { LLMProfilesPanel } from '../components/settings/LLMProfilesPanel'
+import { AIDisclosurePanel } from '../components/settings/AIDisclosurePanel'
 
 export function SettingsPage(): JSX.Element {
   const version = useAppStore((state) => state.version)
@@ -249,6 +250,7 @@ export function SettingsPage(): JSX.Element {
         ) : null}
       </div>
       <LLMProfilesPanel />
+      <AIDisclosurePanel />
       <BackupPanel />
       <DiagnosticsPanel />
     </div>

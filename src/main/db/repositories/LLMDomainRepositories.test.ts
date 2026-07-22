@@ -140,6 +140,48 @@ describe('LLM domain repositories', () => {
 
     expect(consents.deleteAll()).toBe(1)
   })
+
+  it('replaces a remembered disclosure scope instead of accumulating stale limits', () => {
+    const db = createTestDatabase()
+    databases.push(db)
+    const profiles = new LLMProfileRepository(db)
+    const consents = new AIDisclosureConsentRepository(db)
+    profiles.create(profileFixture('profile-1', true, '2026-01-01T00:00:00.000Z'))
+    const consent: AIDisclosureConsent = {
+      id: 'consent-1',
+      profileId: 'profile-1',
+      targetOrigin: 'https://llm.example.test',
+      protocol: 'openai_chat_completions',
+      sourceType: 'liked',
+      fieldsHash: 'sha256:fields',
+      maxInputSongs: 20,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z'
+    }
+
+    consents.remember(consent)
+    consents.remember({
+      ...consent,
+      id: 'consent-2',
+      maxInputSongs: 40,
+      updatedAt: '2026-01-02T00:00:00.000Z'
+    })
+
+    expect(consents.count()).toBe(1)
+    expect(
+      consents.findMatching({
+        profileId: consent.profileId,
+        targetOrigin: consent.targetOrigin,
+        protocol: consent.protocol,
+        sourceType: consent.sourceType,
+        fieldsHash: consent.fieldsHash,
+        maxInputSongs: 40
+      })
+    ).toMatchObject({
+      id: 'consent-2',
+      maxInputSongs: 40
+    })
+  })
 })
 
 function profileFixture(id: string, isActive: boolean, updatedAt: string): LLMProfileRecord {

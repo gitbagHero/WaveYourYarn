@@ -67,20 +67,30 @@ export class StatisticsService {
     return [...sources, ...playlistSources]
   }
 
-  async getAnalysisDataset(source: StatisticsSource): Promise<MusicAnalysisDataset> {
+  async getAnalysisDataset(
+    source: StatisticsSource,
+    requestedSongLimit = ANALYSIS_SONG_LIMIT
+  ): Promise<MusicAnalysisDataset> {
+    if (
+      !Number.isInteger(requestedSongLimit) ||
+      requestedSongLimit < 1 ||
+      requestedSongLimit > ANALYSIS_SONG_LIMIT
+    ) {
+      throw new Error(`分析歌曲数必须为 1 至 ${ANALYSIS_SONG_LIMIT} 之间的整数`)
+    }
     const resolved = this.resolveStatsSource(source)
     const normalizedSongs = normalizeSongsForStats(resolved.songs, resolved.info.type)
     const uniqueSongs = dedupeSongs(normalizedSongs, resolved.info.type)
     const selectedSongs = selectRecentAnalysisSongs(
       uniqueSongs,
       resolved.info.type,
-      ANALYSIS_SONG_LIMIT
+      requestedSongLimit
     )
-    const compactSongs = sampleAnalysisSongs(selectedSongs, resolved.info.type, ANALYSIS_SONG_LIMIT)
+    const compactSongs = sampleAnalysisSongs(selectedSongs, resolved.info.type, requestedSongLimit)
     const generatedAt = nowIso()
     const scope = {
       selection: 'most_recent' as const,
-      requestedSongLimit: ANALYSIS_SONG_LIMIT,
+      requestedSongLimit,
       availableSongCount: uniqueSongs.length,
       includedSongCount: selectedSongs.length,
       truncated: selectedSongs.length < uniqueSongs.length,

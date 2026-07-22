@@ -25,6 +25,11 @@ import type {
 } from '../main/types/backup'
 import type { DiagnosticExportResult, DiagnosticSummary } from '../main/types/diagnostics'
 import type {
+  AIDisclosureAuthorization,
+  AIDisclosurePreferences,
+  AIDisclosurePreview,
+  AIDisclosurePreviewRequest,
+  AuthorizeAIDisclosureRequest,
   CreateLLMProfileRequest,
   JobRun,
   LLMJobIdRequest,
@@ -126,5 +131,16 @@ export interface WaveYourYarnApi {
     list: () => Promise<IpcResult<JobRun[]>>
     get: (request: LLMJobIdRequest) => Promise<IpcResult<JobRun>>
     cancel: (request: LLMJobIdRequest) => Promise<IpcResult<boolean>>
+  }
+  aiDisclosure: {
+    getPreferences: () => Promise<IpcResult<AIDisclosurePreferences>>
+    setPreferences: (request: {
+      confirmationMode: AIDisclosurePreferences['confirmationMode']
+    }) => Promise<IpcResult<AIDisclosurePreferences>>
+    revokeRemembered: () => Promise<IpcResult<AIDisclosurePreferences>>
+    preview: (request: AIDisclosurePreviewRequest) => Promise<IpcResult<AIDisclosurePreview>>
+    authorize: (
+      request: AuthorizeAIDisclosureRequest
+    ) => Promise<IpcResult<AIDisclosureAuthorization>>
   }
 }

@@ -128,3 +128,65 @@ export interface AIDisclosureConsent {
   createdAt: string
   updatedAt: string
 }
+
+export interface AIDisclosureField {
+  path: string
+  label: string
+}
+
+export interface AIDisclosureSourceRequest {
+  type: AIDisclosureSourceType
+  playlistId?: string
+}
+
+export interface AIDisclosurePreviewRequest {
+  profileId: string
+  source: AIDisclosureSourceRequest
+}
+
+export interface AIDisclosurePreview {
+  previewId: string
+  expiresAt: string
+  profile: {
+    id: string
+    name: string
+    modelId: string
+  }
+  targetOrigin: string
+  protocol: LLMProtocol
+  source: {
+    type: AIDisclosureSourceType
+    id?: string
+    name: string
+  }
+  songCount: number
+  maximumSongCount: number
+  fields: AIDisclosureField[]
+  fieldsHash: string
+  datasetDigest: string
+  includesNickname: false
+  requiresConfirmation: boolean
+  matchedRememberedConsent: boolean
+  notices: string[]
+}
+
+export interface AuthorizeAIDisclosureRequest {
+  previewId: string
+  confirmed: boolean
+  remember: boolean
+}
+
+export interface AIDisclosureAuthorization {
+  token: string
+  expiresAt: string
+  remembered: boolean
+}
+
+export interface AIDisclosurePreferences {
+  confirmationMode: 'always' | 'allow_remembered'
+  rememberedConsentCount: number
+}
+
+export interface SetAIDisclosurePreferencesRequest {
+  confirmationMode: AIDisclosurePreferences['confirmationMode']
+}

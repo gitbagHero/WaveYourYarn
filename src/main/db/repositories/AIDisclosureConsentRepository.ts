@@ -15,6 +15,13 @@ export interface AIDisclosureConsentScope {
 export class AIDisclosureConsentRepository {
   constructor(private readonly db: Database = getDatabase()) {}
 
+  count(): number {
+    const row = this.db.prepare('SELECT COUNT(*) AS count FROM ai_disclosure_consents').get() as {
+      count: number
+    }
+    return row.count
+  }
+
   create(consent: AIDisclosureConsent): void {
     this.db
       .prepare(
@@ -27,6 +34,30 @@ export class AIDisclosureConsentRepository {
         )`
       )
       .run(toParameters(consent))
+  }
+
+  remember(consent: AIDisclosureConsent): void {
+    this.db.transaction(() => {
+      this.db
+        .prepare(
+          `DELETE FROM ai_disclosure_consents
+           WHERE profile_id = @profileId
+             AND target_origin = @targetOrigin
+             AND protocol = @protocol
+             AND source_type = @sourceType
+             AND source_id IS @sourceId
+             AND fields_hash = @fieldsHash`
+        )
+        .run({
+          profileId: consent.profileId,
+          targetOrigin: consent.targetOrigin,
+          protocol: consent.protocol,
+          sourceType: consent.sourceType,
+          sourceId: consent.sourceId ?? null,
+          fieldsHash: consent.fieldsHash
+        })
+      this.create(consent)
+    })()
   }
 
   findMatching(scope: AIDisclosureConsentScope): AIDisclosureConsent | null {

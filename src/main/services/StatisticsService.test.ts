@@ -27,6 +27,28 @@ describe('StatisticsService analysis dataset', () => {
     expect(dataset.compactSongs.at(-1)?.ncmSongId).toBe('song-5')
     expect(dataset.digest).toMatch(/^sha256:[a-f0-9]{64}$/u)
   })
+
+  it('applies a smaller profile limit consistently to the summary and compact input', async () => {
+    const songs = Array.from({ length: 25 }, (_, index) => likedSong(index))
+    const repository = {
+      getLikedSongsForStats: () => songs
+    } as unknown as StatisticsRepository
+    const service = new StatisticsService(repository)
+
+    const dataset = await service.getAnalysisDataset({ type: 'liked' }, 10)
+
+    expect(dataset.scope).toMatchObject({
+      requestedSongLimit: 10,
+      availableSongCount: 25,
+      includedSongCount: 10,
+      truncated: true
+    })
+    expect(dataset.summary.overview.songCount).toBe(10)
+    expect(dataset.compactSongs).toHaveLength(10)
+    await expect(service.getAnalysisDataset({ type: 'liked' }, 101)).rejects.toThrow(
+      '分析歌曲数必须为 1 至 100 之间的整数'
+    )
+  })
 })
 
 function likedSong(index: number): LikedSong {

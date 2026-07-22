@@ -160,6 +160,26 @@ test('production build exposes preload IPC and renders the primary routes', asyn
       await expect(window).toHaveURL(new RegExp(`${route.hash.replace('/', '\\/')}$`))
       await expect(window.getByRole('heading', { name: route.heading, exact: true }).first()).toBeVisible()
     }
+
+    await expect(window.getByRole('heading', { name: 'AI 模型配置', exact: true })).toBeVisible()
+    await expect(window.getByRole('heading', { name: 'AI 数据披露', exact: true })).toBeVisible()
+    const disclosurePreferencesResult = await window.evaluate(async () => {
+      const bridge = globalThis as typeof globalThis & {
+        waveYourYarn: {
+          aiDisclosure: {
+            getPreferences: () => Promise<{
+              success: boolean
+              data?: { confirmationMode: string; rememberedConsentCount: number }
+            }>
+          }
+        }
+      }
+      return bridge.waveYourYarn.aiDisclosure.getPreferences()
+    })
+    expect(disclosurePreferencesResult).toEqual({
+      success: true,
+      data: { confirmationMode: 'allow_remembered', rememberedConsentCount: 0 }
+    })
   } finally {
     await electronApp.close()
     await rm(userDataDir, { recursive: true, force: true })

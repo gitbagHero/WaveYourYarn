@@ -1,4 +1,10 @@
 export type {
+  AIDisclosureAuthorization,
+  AIDisclosurePreferences,
+  AIDisclosurePreview,
+  AIDisclosurePreviewRequest,
+  AIDisclosureSourceRequest,
+  AuthorizeAIDisclosureRequest,
   CreateLLMProfileRequest,
   JobRun,
   LLMJobIdRequest,

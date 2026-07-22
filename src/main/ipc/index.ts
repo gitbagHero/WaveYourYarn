@@ -9,6 +9,7 @@ import { registerBackupIpc } from './backup.ipc'
 import { registerDiagnosticsIpc } from './diagnostics.ipc'
 import { registerLLMProfilesIpc } from './llmProfiles.ipc'
 import { createLLMIpcServices, registerLLMJobsIpc } from './llmJobs.ipc'
+import { registerAIDisclosureIpc } from './aiDisclosure.ipc'
 
 export function registerIpcHandlers(): void {
   registerAppIpc()
@@ -23,4 +24,5 @@ export function registerIpcHandlers(): void {
   const llmServices = createLLMIpcServices()
   registerLLMProfilesIpc(llmServices.profileService)
   registerLLMJobsIpc(llmServices)
+  registerAIDisclosureIpc(llmServices.disclosureService)
 }

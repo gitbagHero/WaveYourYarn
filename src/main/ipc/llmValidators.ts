@@ -1,12 +1,19 @@
 import {
   LLM_OUTPUT_MODES,
   LLM_PROTOCOLS,
+  AI_DISCLOSURE_SOURCE_TYPES,
+  type AIDisclosurePreviewRequest,
+  type AuthorizeAIDisclosureRequest,
   type CreateLLMProfileRequest,
   type LLMJobIdRequest,
   type LLMProfileIdRequest,
   type SetLLMProfileApiKeyRequest,
   type UpdateLLMProfileRequest
 } from '../types/llm'
+import {
+  AI_DISCLOSURE_CONFIRMATION_MODES,
+  type AIDisclosureConfirmationMode
+} from '../types/settings'
 
 const PROFILE_FIELD_KEYS = [
   'name',
@@ -20,12 +27,43 @@ const PROFILE_FIELD_KEYS = [
 ] as const
 
 export class LLMIpcValidationError extends Error {
-  readonly code = 'LLM_PROFILE_INVALID'
-
-  constructor(message = 'LLM 配置参数格式不正确') {
+  constructor(
+    message = 'LLM 配置参数格式不正确',
+    readonly code = 'LLM_PROFILE_INVALID'
+  ) {
     super(message)
     this.name = 'LLMIpcValidationError'
   }
+}
+
+export function parseAIDisclosurePreviewRequest(value: unknown): AIDisclosurePreviewRequest {
+  const object = readStrictObject(value, ['profileId', 'source'])
+  const source = readStrictObject(object.source, ['type', 'playlistId'])
+  const type = readEnum(source.type, AI_DISCLOSURE_SOURCE_TYPES, '音乐数据来源')
+  if (type === 'playlist') {
+    return {
+      profileId: readId(object.profileId),
+      source: { type, playlistId: readString(source.playlistId, '歌单 ID', 200) }
+    }
+  }
+  if ('playlistId' in source && source.playlistId !== undefined) {
+    throw disclosureValidationError('非歌单来源不能包含歌单 ID')
+  }
+  return { profileId: readId(object.profileId), source: { type } }
+}
+
+export function parseAuthorizeAIDisclosureRequest(value: unknown): AuthorizeAIDisclosureRequest {
+  const object = readStrictObject(value, ['previewId', 'confirmed', 'remember'])
+  return {
+    previewId: readString(object.previewId, '披露预览 ID', 200),
+    confirmed: readBoolean(object.confirmed, '明确确认'),
+    remember: readBoolean(object.remember, '记住授权')
+  }
+}
+
+export function parseAIDisclosureConfirmationMode(value: unknown): AIDisclosureConfirmationMode {
+  const object = readStrictObject(value, ['confirmationMode'])
+  return readEnum(object.confirmationMode, AI_DISCLOSURE_CONFIRMATION_MODES, '数据披露确认模式')
 }
 
 export function parseCreateLLMProfileRequest(value: unknown): CreateLLMProfileRequest {
@@ -145,6 +183,13 @@ function readInteger(value: unknown, label: string): number {
   return value
 }
 
+function readBoolean(value: unknown, label: string): boolean {
+  if (typeof value !== 'boolean') {
+    throw disclosureValidationError(`${label}必须是布尔值`)
+  }
+  return value
+}
+
 function readEnum<Value extends string>(
   value: unknown,
   allowedValues: readonly Value[],
@@ -154,4 +199,8 @@ function readEnum<Value extends string>(
     throw new LLMIpcValidationError(`${label}不受支持`)
   }
   return value as Value
+}
+
+function disclosureValidationError(message: string): LLMIpcValidationError {
+  return new LLMIpcValidationError(message, 'AI_DISCLOSURE_INVALID')
 }
