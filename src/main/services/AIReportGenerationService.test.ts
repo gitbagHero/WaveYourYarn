@@ -68,7 +68,7 @@ describe('AIReportGenerationService', () => {
       protocol: 'openai_chat_completions',
       providerOrigin: 'https://llm.example.test',
       modelId: 'model-a',
-      promptTemplateVersion: 2,
+      promptTemplateVersion: 3,
       datasetDigest: `sha256:${'a'.repeat(64)}`
     })
     expect(JSON.stringify(report)).not.toContain('fake-api-key')
@@ -345,7 +345,8 @@ function validReportFixture(): Record<string, unknown> {
     subtitle: '基于最近收藏样本',
     tasteSnapshot: {
       summary: '这是一段用于验证持久化链路的音乐偏好摘要。',
-      keywords: ['探索', '专注']
+      keywords: ['探索', '专注'],
+      evidence
     },
     listeningArchetype: {
       name: '旋律探索者',

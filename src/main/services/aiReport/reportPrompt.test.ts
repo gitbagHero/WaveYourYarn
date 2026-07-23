@@ -7,13 +7,14 @@ describe('AI report prompt', () => {
   it('exposes a fixed template version and only serializes the bounded analysis input', () => {
     const prompt = buildAIReportPrompt(datasetFixture(), factsFixture())
 
-    expect(AI_REPORT_PROMPT_TEMPLATE_VERSION).toBe(2)
+    expect(AI_REPORT_PROMPT_TEMPLATE_VERSION).toBe(3)
     expect(prompt.templateVersion).toBe(AI_REPORT_PROMPT_TEMPLATE_VERSION)
     expect(prompt.user).toContain(`sha256:${'a'.repeat(64)}`)
     expect(prompt.user).toContain('song-1')
     expect(prompt.user).not.toContain('nickname')
     expect(prompt.user).not.toContain('rawData')
     expect(prompt.system).toContain('这是收藏样本，不是完整播放历史')
+    expect(prompt.system).toContain('每个 evidence 必须至少包含一个有效 songId 或 factKey')
   })
 })
 

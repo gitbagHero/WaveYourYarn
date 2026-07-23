@@ -61,6 +61,34 @@ describe('parseAndValidateAIReport', () => {
       })
     )
   })
+
+  it('requires every explanatory item to cite at least one bounded evidence reference', () => {
+    const value = validReport()
+    value.moodsAndScenes[0].evidence = { songIds: [], factKeys: [] }
+
+    expect(() => parseAndValidateAIReport(JSON.stringify(value), dataset)).toThrowError(
+      expect.objectContaining<Partial<AIReportValidationError>>({
+        message: expect.stringContaining('must reference at least one')
+      })
+    )
+  })
+
+  it('rejects unknown top-level and nested fields instead of persisting provider extras', () => {
+    const topLevel = { ...validReport(), rawResponse: 'must not persist' }
+    expect(() => parseAndValidateAIReport(JSON.stringify(topLevel), dataset)).toThrowError(
+      expect.objectContaining<Partial<AIReportValidationError>>({
+        message: expect.stringContaining('report.rawResponse is not allowed')
+      })
+    )
+
+    const nested = validReport()
+    Object.assign(nested.listeningArchetype.evidence, { explanation: 'unsupported' })
+    expect(() => parseAndValidateAIReport(JSON.stringify(nested), dataset)).toThrowError(
+      expect.objectContaining<Partial<AIReportValidationError>>({
+        message: expect.stringContaining('evidence.explanation is not allowed')
+      })
+    )
+  })
 })
 
 function validReport() {
@@ -77,7 +105,8 @@ function validReport() {
     subtitle: '基于最近收藏样本的娱乐性回顾',
     tasteSnapshot: {
       summary: '样本表现出一定集中度，同时仍保留变化。',
-      keywords: ['集中', '变化']
+      keywords: ['集中', '变化'],
+      evidence
     },
     listeningArchetype: {
       name: '谨慎漫游者',

@@ -4,7 +4,7 @@ import type { AnalysisTimePrecision, MusicStatsSummary, StatisticsSourceType } f
 export type AIReportConfidence = 'low' | 'medium' | 'high'
 
 export const AI_REPORT_CONTENT_SCHEMA_VERSION = 1 as const
-export const AI_REPORT_PROMPT_TEMPLATE_VERSION = 2 as const
+export const AI_REPORT_PROMPT_TEMPLATE_VERSION = 3 as const
 export const AI_REPORT_STATUSES = ['succeeded'] as const
 export type AIReportStatus = (typeof AI_REPORT_STATUSES)[number]
 
@@ -35,6 +35,8 @@ export interface AIReportContentV1 {
   tasteSnapshot: {
     summary: string
     keywords: string[]
+    /** Required by prompt template v3; absent only on locally stored pre-v3 reports. */
+    evidence?: AIReportEvidence
   }
   listeningArchetype: {
     name: string

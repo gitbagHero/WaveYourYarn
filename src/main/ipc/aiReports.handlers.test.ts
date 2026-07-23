@@ -87,7 +87,7 @@ function reportServiceFixture(): AIReportReaderWriter & {
     keywords: ['one'],
     providerOrigin: 'https://llm.example.test',
     modelId: 'model-a',
-    promptTemplateVersion: 2,
+    promptTemplateVersion: 3,
     datasetDigest: `sha256:${'a'.repeat(64)}`,
     generatedAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z'

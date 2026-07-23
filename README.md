@@ -10,13 +10,15 @@ WaveYourYarn 是一个基于 Electron 的个人音乐数据桌面工具，用于
 - 同步“我喜欢的音乐”、创建的歌单和收藏的歌单；
 - 查看、搜索、排序并单独刷新歌单歌曲；
 - 按当前筛选范围将歌曲导出为 CSV、JSON 或 Markdown；
-- 查看本地音乐统计摘要，为后续 AI 报告提供结构化数据；
+- 查看本地音乐统计摘要，并作为 AI 报告的结构化数据来源；
 - 设置默认导出目录，管理各类本地缓存和导出历史；
 - 创建不含登录凭据的版本化数据库备份，并在校验、应急快照和回滚保护下恢复；
 - 查看运行时与数据库诊断摘要，主动导出经过全链路脱敏的 JSON 诊断包；
 - 在网络不可用时读取当前缓存所属账号的本地数据。
 
 v0.2.5 聚焦发行与质量基础：补齐 Electron 真实运行时 E2E、安全边界、macOS 双架构开发打包、数据库备份恢复和脱敏诊断能力。
+
+`codex/v0.3-llm-foundation` 开发分支已完成 v0.3.0 LLM 基础和 v0.3.1 AI 音乐报告主流程：用户可以配置 OpenAI-compatible Chat Completions 服务，在明确确认数据披露后，从本地 liked、全部缓存或指定歌单样本生成报告；报告支持进度、取消、安全重试、离线历史、证据引用、本地重命名、本地软删除和按原来源重新生成。Markdown/HTML 报告导出仍属于尚未完成的 v0.3.2。
 
 ## 当前路线
 
@@ -64,7 +66,7 @@ pnpm run package:mac
 pnpm run icons:build
 ```
 
-`pnpm run check` 会依次完成类型检查、lint、测试和生产构建。`pnpm run test:e2e` 会启动真实 Electron 生产构建，验证 preload、IPC ping、主路由、备份和诊断。`pnpm run package:dir` 会在 `release/` 生成当前架构的未签名开发包，`pnpm run test:e2e:packaged` 验证打包态应用。`pnpm run package:mac` 生成 arm64/x64 DMG 与 ZIP；正式标签工作流会在两种原生 runner 上分别构建，避免原生 SQLite 交叉编译风险。数据库会在应用启动时自动初始化和迁移，不需要手工执行 SQL。
+`pnpm run check` 会依次完成类型检查、lint、测试和生产构建。`pnpm run test:e2e` 会启动真实 Electron 生产构建，验证 preload、IPC ping、主路由、备份、诊断，以及本地 mock LLM 的报告成功、取消、非法输出与鉴权失败路径。`pnpm run package:dir` 会在 `release/` 生成当前架构的未签名开发包，`pnpm run test:e2e:packaged` 验证打包态应用。`pnpm run package:mac` 生成 arm64/x64 DMG 与 ZIP；正式标签工作流会在两种原生 runner 上分别构建，避免原生 SQLite 交叉编译风险。数据库会在应用启动时自动初始化和迁移，不需要手工执行 SQL。
 
 ### Preload 与 IPC 排查
 
@@ -100,6 +102,7 @@ pnpm run icons:build
 - [v0.2.5 发布前人工回归清单](docs/v0.2.5-manual-regression.md)
 - [v0.3.x AI 音乐报告详细开发计划](docs/v0.3.x-plan.md)
 - [v0.3.x 产品与技术决策记录](docs/v0.3-decisions.md)
+- [v0.3.1 AI 音乐报告人工回归清单](docs/v0.3.1-manual-regression.md)
 - [v1.0 / v2.0 范围决策记录](docs/v1-v2-scope-decisions.md)
 - [v0.2.4 稳定化计划](docs/v0.2.4-stabilization-plan.md)
 - [版本记录](CHANGELOG.md)

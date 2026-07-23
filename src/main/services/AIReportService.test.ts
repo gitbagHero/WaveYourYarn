@@ -60,13 +60,17 @@ function reportFixture(): AIReportRecord {
     protocol: 'openai_chat_completions',
     providerOrigin: 'https://llm.example.test',
     modelId: 'model-a',
-    promptTemplateVersion: 2,
+    promptTemplateVersion: 3,
     datasetDigest: `sha256:${'a'.repeat(64)}`,
     content: {
       schemaVersion: 1,
       title: 'Report',
       subtitle: 'Subtitle',
-      tasteSnapshot: { summary: 'Summary', keywords: ['one', 'two'] },
+      tasteSnapshot: {
+        summary: 'Summary',
+        keywords: ['one', 'two'],
+        evidence: { songIds: [], factKeys: ['sample.songCount'] }
+      },
       listeningArchetype: {
         name: 'Archetype',
         description: 'Description',

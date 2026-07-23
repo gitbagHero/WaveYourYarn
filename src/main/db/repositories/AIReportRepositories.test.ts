@@ -249,7 +249,11 @@ function reportContentFixture(): AIReportContentV1 {
     schemaVersion: 1,
     title: '测试报告',
     subtitle: '最近收藏样本',
-    tasteSnapshot: { summary: '测试摘要', keywords: ['测试', '样本'] },
+    tasteSnapshot: {
+      summary: '测试摘要',
+      keywords: ['测试', '样本'],
+      evidence: { songIds: ['song-1'], factKeys: ['sample.songCount'] }
+    },
     listeningArchetype: {
       name: '探索者',
       description: '测试描述',

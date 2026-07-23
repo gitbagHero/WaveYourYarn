@@ -109,6 +109,10 @@ export function ReportDetailView({
             </span>
           ))}
         </div>
+        <Evidence
+          evidence={content.tasteSnapshot.evidence ?? { songIds: [], factKeys: [] }}
+          legacyMissing={!content.tasteSnapshot.evidence}
+        />
       </section>
 
       <section className="mt-6 rounded-md border p-5">
@@ -222,9 +226,19 @@ function InsightSection({
   )
 }
 
-function Evidence({ evidence }: { evidence: AIReportEvidence }): JSX.Element {
+function Evidence({
+  evidence,
+  legacyMissing = false
+}: {
+  evidence: AIReportEvidence
+  legacyMissing?: boolean
+}): JSX.Element {
   if (evidence.songIds.length === 0 && evidence.factKeys.length === 0) {
-    return <p className="mt-3 text-xs text-muted-foreground">当前解释没有足够的可引用证据。</p>
+    return (
+      <p className="mt-3 text-xs text-muted-foreground">
+        {legacyMissing ? '这份旧版报告未为此章节保存独立证据。' : '当前解释没有足够的可引用证据。'}
+      </p>
+    )
   }
   return (
     <div className="mt-3 border-t pt-3 text-xs text-muted-foreground">
