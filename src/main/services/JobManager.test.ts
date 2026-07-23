@@ -28,7 +28,7 @@ describe('JobManager', () => {
     expect(repository.findById(job.id)).toMatchObject({
       status: 'succeeded',
       stage: 'completed',
-      progressCurrent: 1,
+      progressCurrent: 2,
       progressTotal: 2
     })
   })
@@ -51,6 +51,31 @@ describe('JobManager', () => {
     resolveOperation?.()
     await expect(running).rejects.toMatchObject({ code: 'LLM_CANCELLED' })
     expect(repository.findById(job.id)).toMatchObject({ status: 'cancelled' })
+  })
+
+  it('rolls back a result callback before recording a persistence failure', async () => {
+    const { manager, repository, db } = createManager(databases)
+    db.exec('CREATE TABLE persisted_job_results (id TEXT PRIMARY KEY);')
+    const job = manager.createJob('ai_report_generation', {
+      inputSummary: { sourceType: 'liked', songCount: 1 }
+    })
+
+    await expect(
+      manager.run(
+        job.id,
+        async () => 'report-1',
+        (reportId) => {
+          expect(repository.findById(job.id)?.status).toBe('succeeded')
+          db.prepare('INSERT INTO persisted_job_results (id) VALUES (?)').run(reportId)
+          throw new Error('persistence failed')
+        }
+      )
+    ).rejects.toMatchObject({ code: 'JOB_FAILED' })
+
+    expect(repository.findById(job.id)).toMatchObject({ status: 'failed' })
+    expect(db.prepare('SELECT COUNT(*) AS count FROM persisted_job_results').get()).toEqual({
+      count: 0
+    })
   })
 
   it('stores only a generic message for unknown failures and supports retry', async () => {
@@ -84,6 +109,9 @@ describe('JobManager', () => {
     expect(manager.recoverInterruptedJobs()).toBe(2)
     expect(repository.findById(pendingJob.id)).toMatchObject({ status: 'interrupted' })
     expect(repository.findById(runningJob.id)).toMatchObject({ status: 'interrupted' })
+    expect(() =>
+      manager.retry(pendingJob.id, { expectedKind: 'ai_report_generation' })
+    ).toThrowError(expect.objectContaining({ code: 'JOB_INPUT_INVALID' }))
 
     expect(() =>
       manager.createJob('ai_report_generation', {
@@ -96,6 +124,7 @@ describe('JobManager', () => {
 function createManager(databases: Database.Database[]): {
   manager: JobManager
   repository: JobRunRepository
+  db: Database.Database
 } {
   const db = createTestDatabase()
   databases.push(db)
@@ -108,6 +137,7 @@ function createManager(databases: Database.Database[]): {
       () => `job-${++id}`,
       () => `2026-01-01T00:00:${String(tick++).padStart(2, '0')}.000Z`
     ),
-    repository
+    repository,
+    db
   }
 }

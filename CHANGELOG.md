@@ -20,6 +20,7 @@
 - 增加 main-only 的短时单次披露 token，绑定 profile、目标、协议、来源、字段哈希、歌曲上限与 dataset digest，范围扩大后强制重新确认；
 - 修复 Node 原生请求在 DNS `all` lookup 模式下无法使用已校验固定地址的问题，恢复真实 LLM Profile 连接；
 - 固定 AI 报告 prompt template version，新增 schema 8 报告与来源快照、软删除 Repository，并确保清理音乐缓存或删除模型配置不会连带删除历史报告；
+- 串联披露授权、报告 Provider、内容校验、JobManager 与 schema 8 原子落库，失败、取消、非法输出和持久化异常不会产生成功报告，重试会重新授权并建立新任务；
 
 ### 项目路线
 

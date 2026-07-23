@@ -70,10 +70,28 @@ export class JobRunRepository {
     return this.updateWhereStatus(
       `UPDATE job_runs
        SET status = 'succeeded', stage = 'completed', finished_at = ?,
+           progress_current = CASE
+             WHEN progress_total IS NULL THEN progress_current
+             ELSE progress_total
+           END,
            error_code = NULL, safe_message = NULL
        WHERE id = ? AND status = 'running'`,
       [finishedAt, id]
     )
+  }
+
+  /**
+   * Marks a job successful and persists its result in the same SQLite
+   * transaction. The callback must stay synchronous.
+   */
+  markSucceededAtomically(id: string, finishedAt: string, persistResult: () => void): boolean {
+    return this.db.transaction(() => {
+      if (!this.markSucceeded(id, finishedAt)) {
+        return false
+      }
+      persistResult()
+      return true
+    })()
   }
 
   markFailed(id: string, errorCode: string, safeMessage: string, finishedAt: string): boolean {

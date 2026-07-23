@@ -26,6 +26,12 @@ export interface CreateJobInput {
   retryOfJobId?: string
 }
 
+export interface RetryJobInput {
+  expectedKind?: JobRunKind
+  profileId?: string
+  inputSummary?: Record<string, unknown>
+}
+
 export interface JobOperationContext {
   signal: AbortSignal
   updateProgress(stage: string, current: number, total: number): boolean
@@ -83,7 +89,8 @@ export class JobManager {
 
   async run<Result>(
     id: string,
-    operation: (context: JobOperationContext) => Promise<Result>
+    operation: (context: JobOperationContext) => Promise<Result>,
+    persistSuccess?: (result: Result, finishedAt: string) => void
   ): Promise<Result> {
     if (!this.repository.findById(id)) {
       throw new JobExecutionError('JOB_NOT_FOUND', '任务不存在')
@@ -102,7 +109,13 @@ export class JobManager {
           this.updateProgress(id, stage, current, total, controller)
       })
 
-      if (!this.repository.markSucceeded(id, this.clock())) {
+      const finishedAt = this.clock()
+      const succeeded = persistSuccess
+        ? this.repository.markSucceededAtomically(id, finishedAt, () =>
+            persistSuccess(result, finishedAt)
+          )
+        : this.repository.markSucceeded(id, finishedAt)
+      if (!succeeded) {
         throw this.currentStateError(id)
       }
       return result
@@ -138,7 +151,7 @@ export class JobManager {
     return cancelled
   }
 
-  retry(id: string): JobRun {
+  retry(id: string, input: RetryJobInput = {}): JobRun {
     const original = this.repository.findById(id)
     if (!original) {
       throw new JobExecutionError('JOB_NOT_FOUND', '任务不存在')
@@ -146,10 +159,13 @@ export class JobManager {
     if (!['failed', 'cancelled', 'interrupted'].includes(original.status)) {
       throw new JobExecutionError('JOB_INVALID_STATE', '只有失败、取消或中断的任务可以重试')
     }
+    if (input.expectedKind && original.kind !== input.expectedKind) {
+      throw new JobExecutionError('JOB_INPUT_INVALID', '原任务类型与重试操作不匹配')
+    }
 
     return this.createJob(original.kind, {
-      profileId: original.profileId,
-      inputSummary: original.inputSummary,
+      profileId: input.profileId ?? original.profileId,
+      inputSummary: input.inputSummary ?? original.inputSummary,
       retryOfJobId: original.id
     })
   }

@@ -47,6 +47,16 @@ export class AIReportRepository {
     return row ? fromRow(row) : null
   }
 
+  findByJobId(jobId: string, includeDeleted = false): AIReportRecord | null {
+    const row = this.db
+      .prepare(
+        `SELECT * FROM ai_reports
+         WHERE job_id = ? ${includeDeleted ? '' : 'AND deleted_at IS NULL'}`
+      )
+      .get(jobId) as AIReportRow | undefined
+    return row ? fromRow(row) : null
+  }
+
   findAll(includeDeleted = false): AIReportRecord[] {
     return (
       this.db

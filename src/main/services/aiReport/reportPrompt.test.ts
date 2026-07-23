@@ -7,7 +7,7 @@ describe('AI report prompt', () => {
   it('exposes a fixed template version and only serializes the bounded analysis input', () => {
     const prompt = buildAIReportPrompt(datasetFixture(), factsFixture())
 
-    expect(AI_REPORT_PROMPT_TEMPLATE_VERSION).toBe(1)
+    expect(AI_REPORT_PROMPT_TEMPLATE_VERSION).toBe(2)
     expect(prompt.templateVersion).toBe(AI_REPORT_PROMPT_TEMPLATE_VERSION)
     expect(prompt.user).toContain(`sha256:${'a'.repeat(64)}`)
     expect(prompt.user).toContain('song-1')

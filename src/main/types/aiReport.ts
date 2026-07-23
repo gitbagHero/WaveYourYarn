@@ -1,10 +1,10 @@
-import type { LLMProtocol } from './llm'
+import type { AIDisclosureSourceRequest, LLMProtocol } from './llm'
 import type { AnalysisTimePrecision, MusicStatsSummary, StatisticsSourceType } from './statistics'
 
 export type AIReportConfidence = 'low' | 'medium' | 'high'
 
 export const AI_REPORT_CONTENT_SCHEMA_VERSION = 1 as const
-export const AI_REPORT_PROMPT_TEMPLATE_VERSION = 1 as const
+export const AI_REPORT_PROMPT_TEMPLATE_VERSION = 2 as const
 export const AI_REPORT_STATUSES = ['succeeded'] as const
 export type AIReportStatus = (typeof AI_REPORT_STATUSES)[number]
 
@@ -105,6 +105,13 @@ export interface AIReportRecord {
 export type NewAIReportRecord = Omit<AIReportRecord, 'jobId' | 'profileId' | 'deletedAt'> & {
   jobId: string
   profileId: string
+}
+
+export interface StartAIReportGenerationRequest {
+  profileId: string
+  source: AIDisclosureSourceRequest
+  authorizationToken: string
+  retryOfJobId?: string
 }
 
 /**

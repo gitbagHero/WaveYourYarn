@@ -15,6 +15,7 @@ import type {
   AIDisclosurePreviewRequest,
   AIDisclosureSourceType,
   AuthorizeAIDisclosureRequest,
+  LLMProfileRecord,
   LLMProtocol
 } from '../types/llm'
 import type { MusicAnalysisDataset, StatisticsSource } from '../types/statistics'
@@ -126,18 +127,7 @@ export class AIDisclosureService {
       throw new AIDisclosureError('AI_DATASET_EMPTY', '当前来源没有可用于分析的歌曲')
     }
 
-    const targetOrigin = new URL(profile.baseUrl).origin
-    const scope: AIDisclosureAuthorizationScope = {
-      profileId: profile.id,
-      targetOrigin,
-      protocol: profile.protocol,
-      sourceType: dataset.source.type,
-      sourceId: dataset.source.id,
-      fieldsHash: AI_DISCLOSURE_FIELDS_HASH,
-      songCount: dataset.scope.includedSongCount,
-      maximumSongCount: profile.maxInputSongs,
-      datasetDigest: dataset.digest
-    }
+    const scope = createAIDisclosureAuthorizationScope(profile, dataset)
     const confirmationMode = this.getConfirmationMode()
     const matchedRememberedConsent =
       confirmationMode === 'allow_remembered' &&
@@ -155,7 +145,7 @@ export class AIDisclosureService {
       previewId,
       expiresAt: toIso(expiresAt),
       profile: { id: profile.id, name: profile.name, modelId: profile.modelId },
-      targetOrigin,
+      targetOrigin: scope.targetOrigin,
       protocol: profile.protocol,
       source: {
         type: dataset.source.type,
@@ -290,6 +280,23 @@ export class AIDisclosureService {
         this.authorizations.delete(token)
       }
     }
+  }
+}
+
+export function createAIDisclosureAuthorizationScope(
+  profile: Pick<LLMProfileRecord, 'id' | 'baseUrl' | 'protocol' | 'maxInputSongs'>,
+  dataset: MusicAnalysisDataset
+): AIDisclosureAuthorizationScope {
+  return {
+    profileId: profile.id,
+    targetOrigin: new URL(profile.baseUrl).origin,
+    protocol: profile.protocol,
+    sourceType: dataset.source.type,
+    sourceId: dataset.source.id,
+    fieldsHash: AI_DISCLOSURE_FIELDS_HASH,
+    songCount: dataset.scope.includedSongCount,
+    maximumSongCount: profile.maxInputSongs,
+    datasetDigest: dataset.digest
   }
 }
 
