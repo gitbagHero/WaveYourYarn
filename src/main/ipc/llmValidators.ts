@@ -14,6 +14,12 @@ import {
   AI_DISCLOSURE_CONFIRMATION_MODES,
   type AIDisclosureConfirmationMode
 } from '../types/settings'
+import type {
+  AIReportIdRequest,
+  AIReportJobIdRequest,
+  RenameAIReportRequest,
+  StartAIReportGenerationRequest
+} from '../types/aiReport'
 
 const PROFILE_FIELD_KEYS = [
   'name',
@@ -37,19 +43,70 @@ export class LLMIpcValidationError extends Error {
 }
 
 export function parseAIDisclosurePreviewRequest(value: unknown): AIDisclosurePreviewRequest {
-  const object = readStrictObject(value, ['profileId', 'source'])
-  const source = readStrictObject(object.source, ['type', 'playlistId'])
-  const type = readEnum(source.type, AI_DISCLOSURE_SOURCE_TYPES, '音乐数据来源')
-  if (type === 'playlist') {
+  const object = readStrictObject(value, ['profileId', 'source', 'requestedSongLimit', 'language'])
+  return {
+    profileId: readId(object.profileId),
+    source: readDisclosureSource(object.source),
+    ...('requestedSongLimit' in object && object.requestedSongLimit !== undefined
+      ? { requestedSongLimit: readInteger(object.requestedSongLimit, '分析歌曲数') }
+      : {}),
+    ...('language' in object && object.language !== undefined
+      ? { language: readString(object.language, '报告语言', 32) }
+      : {})
+  }
+}
+
+export function parseStartAIReportGenerationRequest(
+  value: unknown
+): StartAIReportGenerationRequest {
+  return readReportRequest(() => {
+    const object = readStrictObject(value, [
+      'profileId',
+      'source',
+      'authorizationToken',
+      'requestedSongLimit',
+      'language',
+      'retryOfJobId'
+    ])
     return {
       profileId: readId(object.profileId),
-      source: { type, playlistId: readString(source.playlistId, '歌单 ID', 200) }
+      source: readDisclosureSource(object.source),
+      authorizationToken: readString(object.authorizationToken, '单次披露授权', 200),
+      ...('requestedSongLimit' in object && object.requestedSongLimit !== undefined
+        ? { requestedSongLimit: readInteger(object.requestedSongLimit, '分析歌曲数') }
+        : {}),
+      ...('language' in object && object.language !== undefined
+        ? { language: readString(object.language, '报告语言', 32) }
+        : {}),
+      ...('retryOfJobId' in object && object.retryOfJobId !== undefined
+        ? { retryOfJobId: readString(object.retryOfJobId, '原任务 ID', 200) }
+        : {})
     }
-  }
-  if ('playlistId' in source && source.playlistId !== undefined) {
-    throw disclosureValidationError('非歌单来源不能包含歌单 ID')
-  }
-  return { profileId: readId(object.profileId), source: { type } }
+  })
+}
+
+export function parseAIReportIdRequest(value: unknown): AIReportIdRequest {
+  return readReportRequest(() => {
+    const object = readStrictObject(value, ['id'])
+    return { id: readString(object.id, '报告 ID', 200) }
+  })
+}
+
+export function parseAIReportJobIdRequest(value: unknown): AIReportJobIdRequest {
+  return readReportRequest(() => {
+    const object = readStrictObject(value, ['jobId'])
+    return { jobId: readString(object.jobId, '任务 ID', 200) }
+  })
+}
+
+export function parseRenameAIReportRequest(value: unknown): RenameAIReportRequest {
+  return readReportRequest(() => {
+    const object = readStrictObject(value, ['id', 'userTitle'])
+    return {
+      id: readString(object.id, '报告 ID', 200),
+      userTitle: readString(object.userTitle, '报告标题', 120)
+    }
+  })
 }
 
 export function parseAuthorizeAIDisclosureRequest(value: unknown): AuthorizeAIDisclosureRequest {
@@ -131,6 +188,18 @@ function readProfileFields(
   return result
 }
 
+function readDisclosureSource(value: unknown): AIDisclosurePreviewRequest['source'] {
+  const source = readStrictObject(value, ['type', 'playlistId'])
+  const type = readEnum(source.type, AI_DISCLOSURE_SOURCE_TYPES, '音乐数据来源')
+  if (type === 'playlist') {
+    return { type, playlistId: readString(source.playlistId, '歌单 ID', 200) }
+  }
+  if ('playlistId' in source && source.playlistId !== undefined) {
+    throw disclosureValidationError('非歌单来源不能包含歌单 ID')
+  }
+  return { type }
+}
+
 function readStrictObject<const Key extends string>(
   value: unknown,
   allowedKeys: readonly Key[]
@@ -203,4 +272,15 @@ function readEnum<Value extends string>(
 
 function disclosureValidationError(message: string): LLMIpcValidationError {
   return new LLMIpcValidationError(message, 'AI_DISCLOSURE_INVALID')
+}
+
+function readReportRequest<Result>(read: () => Result): Result {
+  try {
+    return read()
+  } catch (error) {
+    if (error instanceof LLMIpcValidationError) {
+      throw new LLMIpcValidationError(error.message, 'AI_REPORT_INVALID')
+    }
+    throw error
+  }
 }

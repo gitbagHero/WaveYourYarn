@@ -50,12 +50,20 @@ export class AIReportGenerationService {
   async start(request: StartAIReportGenerationRequest): Promise<JobRun> {
     const runtime = await this.profiles.getRuntimeProfile(request.profileId)
     const source = toStatisticsSource(request.source)
-    const dataset = await this.datasets.getAnalysisDataset(source, runtime.profile.maxInputSongs)
+    const requestedSongLimit = normalizeSongLimit(
+      request.requestedSongLimit ?? runtime.profile.maxInputSongs,
+      runtime.profile.maxInputSongs
+    )
+    const reportLanguage = normalizeReportLanguage(request.language ?? runtime.profile.language)
+    const dataset = await this.datasets.getAnalysisDataset(source, requestedSongLimit)
     if (dataset.scope.includedSongCount === 0) {
       throw new AIDisclosureError('AI_DATASET_EMPTY', '当前来源没有可用于分析的歌曲')
     }
 
-    const authorizationScope = createAIDisclosureAuthorizationScope(runtime.profile, dataset)
+    const authorizationScope = createAIDisclosureAuthorizationScope(runtime.profile, dataset, {
+      maximumSongCount: requestedSongLimit,
+      reportLanguage
+    })
     this.disclosure.consumeAuthorization(request.authorizationToken, authorizationScope)
 
     const jobInput = {
@@ -67,7 +75,7 @@ export class AIReportGenerationService {
         maximumSongCount: authorizationScope.maximumSongCount,
         fieldsHash: authorizationScope.fieldsHash,
         datasetDigest: authorizationScope.datasetDigest,
-        language: runtime.profile.language
+        language: reportLanguage
       }
     }
     const job = request.retryOfJobId
@@ -76,7 +84,7 @@ export class AIReportGenerationService {
           ...jobInput
         })
       : this.jobs.createJob('ai_report_generation', jobInput)
-    this.startInBackground(job, runtime, dataset, authorizationScope.targetOrigin)
+    this.startInBackground(job, runtime, dataset, authorizationScope.targetOrigin, reportLanguage)
     return job
   }
 
@@ -84,13 +92,22 @@ export class AIReportGenerationService {
     job: JobRun,
     runtime: RuntimeLLMProfile,
     dataset: MusicAnalysisDataset,
-    providerOrigin: string
+    providerOrigin: string,
+    reportLanguage: string
   ): void {
     const task = this.jobs
       .run(
         job.id,
         ({ signal, updateProgress }) =>
-          this.generateArtifacts(job, runtime, dataset, providerOrigin, signal, updateProgress),
+          this.generateArtifacts(
+            job,
+            runtime,
+            dataset,
+            providerOrigin,
+            reportLanguage,
+            signal,
+            updateProgress
+          ),
         ({ report, source }) => {
           this.reports.create(report)
           this.sources.create(source)
@@ -110,12 +127,13 @@ export class AIReportGenerationService {
     runtime: RuntimeLLMProfile,
     dataset: MusicAnalysisDataset,
     providerOrigin: string,
+    reportLanguage: string,
     signal: AbortSignal,
     updateProgress: (stage: string, current: number, total: number) => boolean
   ): Promise<GeneratedAIReportArtifacts> {
     updateProgress('building_prompt', 0, REPORT_PROGRESS_TOTAL)
     const facts = buildAIReportFacts(dataset)
-    const prompt = buildAIReportPrompt(dataset, facts, runtime.profile.language)
+    const prompt = buildAIReportPrompt(dataset, facts, reportLanguage)
     const provider = this.providers.createFromRuntimeProfile(runtime)
 
     updateProgress('requesting', 1, REPORT_PROGRESS_TOTAL)
@@ -193,4 +211,22 @@ function toStatisticsSource(source: StartAIReportGenerationRequest['source']): S
     throw new AIDisclosureError('AI_DISCLOSURE_SCOPE_CHANGED', '歌单来源缺少有效 ID，请重新预览')
   }
   return { type: 'playlist', playlistId: source.playlistId.trim() }
+}
+
+function normalizeSongLimit(requested: number, configuredMaximum: number): number {
+  if (!Number.isInteger(requested) || requested < 1 || requested > configuredMaximum) {
+    throw new AIDisclosureError(
+      'AI_DISCLOSURE_SCOPE_CHANGED',
+      `分析歌曲数必须为 1 至 ${configuredMaximum} 之间的整数`
+    )
+  }
+  return requested
+}
+
+function normalizeReportLanguage(value: string): string {
+  const language = value.trim()
+  if (!language || language.length > 32) {
+    throw new AIDisclosureError('AI_DISCLOSURE_SCOPE_CHANGED', '报告语言格式无效')
+  }
+  return language
 }

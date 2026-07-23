@@ -318,7 +318,7 @@ export function AIDisclosurePanel(): JSX.Element {
           ) : (
             <p className="mt-4 border-t border-amber-200 pt-4 font-medium text-green-700">
               单次授权已创建，将于 {new Date(authorization.expiresAt).toLocaleTimeString()}{' '}
-              失效；本版本不会自动上传数据。
+              失效；当前设置页不会自动上传数据。
             </p>
           )}
         </div>

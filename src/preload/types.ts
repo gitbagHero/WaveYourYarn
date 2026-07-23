@@ -39,6 +39,14 @@ import type {
   SetLLMProfileApiKeyRequest,
   UpdateLLMProfileRequest
 } from '../main/types/llm'
+import type {
+  AIReportDetail,
+  AIReportIdRequest,
+  AIReportJobIdRequest,
+  AIReportSummary,
+  RenameAIReportRequest,
+  StartAIReportGenerationRequest
+} from '../main/types/aiReport'
 
 export interface WaveYourYarnApi {
   app: {
@@ -142,5 +150,13 @@ export interface WaveYourYarnApi {
     authorize: (
       request: AuthorizeAIDisclosureRequest
     ) => Promise<IpcResult<AIDisclosureAuthorization>>
+  }
+  aiReports: {
+    list: () => Promise<IpcResult<AIReportSummary[]>>
+    get: (request: AIReportIdRequest) => Promise<IpcResult<AIReportDetail>>
+    getByJob: (request: AIReportJobIdRequest) => Promise<IpcResult<AIReportDetail>>
+    start: (request: StartAIReportGenerationRequest) => Promise<IpcResult<JobRun>>
+    rename: (request: RenameAIReportRequest) => Promise<IpcResult<AIReportDetail>>
+    delete: (request: AIReportIdRequest) => Promise<IpcResult<boolean>>
   }
 }

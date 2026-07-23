@@ -43,7 +43,7 @@ const api: WaveYourYarnApi = {
       ipcRenderer.invoke('playlists:search-playlist-songs', {
         playlistId: typeof playlistId === 'string' ? playlistId : '',
         keyword: typeof keyword === 'string' ? keyword : ''
-      }),
+    }),
     clearPlaylistSongsCache: (playlistId: string) =>
       ipcRenderer.invoke('playlists:clear-playlist-songs-cache', typeof playlistId === 'string' ? playlistId : '')
   },
@@ -110,6 +110,14 @@ const api: WaveYourYarnApi = {
     revokeRemembered: () => ipcRenderer.invoke('ai-disclosure:revoke-remembered'),
     preview: (request) => ipcRenderer.invoke('ai-disclosure:preview', request),
     authorize: (request) => ipcRenderer.invoke('ai-disclosure:authorize', request)
+  },
+  aiReports: {
+    list: () => ipcRenderer.invoke('ai-reports:list'),
+    get: (request) => ipcRenderer.invoke('ai-reports:get', request),
+    getByJob: (request) => ipcRenderer.invoke('ai-reports:get-by-job', request),
+    start: (request) => ipcRenderer.invoke('ai-reports:start', request),
+    rename: (request) => ipcRenderer.invoke('ai-reports:rename', request),
+    delete: (request) => ipcRenderer.invoke('ai-reports:delete', request)
   }
 }
 

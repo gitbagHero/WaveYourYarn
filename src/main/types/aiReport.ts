@@ -111,6 +111,8 @@ export interface StartAIReportGenerationRequest {
   profileId: string
   source: AIDisclosureSourceRequest
   authorizationToken: string
+  requestedSongLimit?: number
+  language?: string
   retryOfJobId?: string
 }
 
@@ -135,4 +137,36 @@ export interface AIReportSourceRecord {
   summary: MusicStatsSummary
   datasetDigest: string
   generatedAt: string
+}
+
+export interface AIReportSummary {
+  id: string
+  jobId?: string
+  profileId?: string
+  userTitle: string
+  subtitle: string
+  keywords: string[]
+  providerOrigin: string
+  modelId: string
+  promptTemplateVersion: number
+  datasetDigest: string
+  generatedAt: string
+  updatedAt: string
+}
+
+export interface AIReportDetail {
+  report: AIReportRecord
+  sources: AIReportSourceRecord[]
+}
+
+export interface AIReportIdRequest {
+  id: string
+}
+
+export interface AIReportJobIdRequest {
+  jobId: string
+}
+
+export interface RenameAIReportRequest extends AIReportIdRequest {
+  userTitle: string
 }

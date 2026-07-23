@@ -60,6 +60,7 @@ export interface AIDisclosureDatasetProvider {
 
 export interface AIDisclosureAuthorizationScope {
   profileId: string
+  modelId: string
   targetOrigin: string
   protocol: LLMProtocol
   sourceType: AIDisclosureSourceType
@@ -67,6 +68,7 @@ export interface AIDisclosureAuthorizationScope {
   fieldsHash: string
   songCount: number
   maximumSongCount: number
+  reportLanguage: string
   datasetDigest: string
 }
 
@@ -122,12 +124,20 @@ export class AIDisclosureService {
     }
 
     const source = toStatisticsSource(request.source)
-    const dataset = await this.datasets.getAnalysisDataset(source, profile.maxInputSongs)
+    const maximumSongCount = normalizeSongLimit(
+      request.requestedSongLimit ?? profile.maxInputSongs,
+      profile.maxInputSongs
+    )
+    const reportLanguage = normalizeReportLanguage(request.language ?? profile.language)
+    const dataset = await this.datasets.getAnalysisDataset(source, maximumSongCount)
     if (dataset.scope.includedSongCount === 0) {
       throw new AIDisclosureError('AI_DATASET_EMPTY', '当前来源没有可用于分析的歌曲')
     }
 
-    const scope = createAIDisclosureAuthorizationScope(profile, dataset)
+    const scope = createAIDisclosureAuthorizationScope(profile, dataset, {
+      maximumSongCount,
+      reportLanguage
+    })
     const confirmationMode = this.getConfirmationMode()
     const matchedRememberedConsent =
       confirmationMode === 'allow_remembered' &&
@@ -153,7 +163,8 @@ export class AIDisclosureService {
         name: dataset.source.name
       },
       songCount: dataset.scope.includedSongCount,
-      maximumSongCount: profile.maxInputSongs,
+      maximumSongCount,
+      reportLanguage,
       fields: AI_DISCLOSURE_FIELDS.map((field) => ({ ...field })),
       fieldsHash: AI_DISCLOSURE_FIELDS_HASH,
       datasetDigest: dataset.digest,
@@ -164,7 +175,7 @@ export class AIDisclosureService {
         '确认后，所列音乐数据将发送到所选模型服务；连接测试不会发送这些数据。',
         '远端服务收到数据后无法由本应用撤回，请同时遵守所选服务的隐私条款。',
         '模型调用可能产生费用；取消等待不代表服务商一定不会计费。',
-        '本版本只验证披露授权流程，不会因此预览或确认动作自动上传数据。'
+        '预览或确认本身不会上传数据；只有在 AI 音乐报告页明确点击生成后才会发起模型请求。'
       ]
     }
   }
@@ -189,8 +200,9 @@ export class AIDisclosureService {
     if (
       !profile ||
       new URL(profile.baseUrl).origin !== preview.scope.targetOrigin ||
+      profile.modelId !== preview.scope.modelId ||
       profile.protocol !== preview.scope.protocol ||
-      profile.maxInputSongs !== preview.scope.maximumSongCount
+      profile.maxInputSongs < preview.scope.maximumSongCount
     ) {
       this.previews.delete(request.previewId)
       throw new AIDisclosureError(
@@ -284,18 +296,24 @@ export class AIDisclosureService {
 }
 
 export function createAIDisclosureAuthorizationScope(
-  profile: Pick<LLMProfileRecord, 'id' | 'baseUrl' | 'protocol' | 'maxInputSongs'>,
-  dataset: MusicAnalysisDataset
+  profile: Pick<
+    LLMProfileRecord,
+    'id' | 'baseUrl' | 'modelId' | 'protocol' | 'maxInputSongs' | 'language'
+  >,
+  dataset: MusicAnalysisDataset,
+  options: { maximumSongCount?: number; reportLanguage?: string } = {}
 ): AIDisclosureAuthorizationScope {
   return {
     profileId: profile.id,
+    modelId: profile.modelId,
     targetOrigin: new URL(profile.baseUrl).origin,
     protocol: profile.protocol,
     sourceType: dataset.source.type,
     sourceId: dataset.source.id,
     fieldsHash: AI_DISCLOSURE_FIELDS_HASH,
     songCount: dataset.scope.includedSongCount,
-    maximumSongCount: profile.maxInputSongs,
+    maximumSongCount: options.maximumSongCount ?? profile.maxInputSongs,
+    reportLanguage: options.reportLanguage ?? profile.language,
     datasetDigest: dataset.digest
   }
 }
@@ -325,6 +343,7 @@ function sameScope(
 ): boolean {
   return (
     actual.profileId === expected.profileId &&
+    actual.modelId === expected.modelId &&
     actual.targetOrigin === expected.targetOrigin &&
     actual.protocol === expected.protocol &&
     actual.sourceType === expected.sourceType &&
@@ -332,10 +351,29 @@ function sameScope(
     actual.fieldsHash === expected.fieldsHash &&
     actual.songCount === expected.songCount &&
     actual.maximumSongCount === expected.maximumSongCount &&
+    actual.reportLanguage === expected.reportLanguage &&
     actual.datasetDigest === expected.datasetDigest
   )
 }
 
 function toIso(timestamp: number): string {
   return new Date(timestamp).toISOString()
+}
+
+function normalizeSongLimit(requested: number, configuredMaximum: number): number {
+  if (!Number.isInteger(requested) || requested < 1 || requested > configuredMaximum) {
+    throw new AIDisclosureError(
+      'AI_DISCLOSURE_SCOPE_CHANGED',
+      `分析歌曲数必须为 1 至 ${configuredMaximum} 之间的整数`
+    )
+  }
+  return requested
+}
+
+function normalizeReportLanguage(value: string): string {
+  const language = value.trim()
+  if (!language || language.length > 32) {
+    throw new AIDisclosureError('AI_DISCLOSURE_SCOPE_CHANGED', '报告语言格式无效')
+  }
+  return language
 }

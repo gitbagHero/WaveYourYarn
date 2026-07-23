@@ -36,6 +36,7 @@ describe('AIDisclosureService', () => {
       targetOrigin: 'https://llm.example.test',
       songCount: 2,
       maximumSongCount: 40,
+      reportLanguage: 'zh-CN',
       fieldsHash: AI_DISCLOSURE_FIELDS_HASH,
       includesNickname: false,
       requiresConfirmation: true,
@@ -148,6 +149,31 @@ describe('AIDisclosureService', () => {
       fixture.service.preview({ profileId: 'profile-1', source: { type: 'liked' } })
     ).rejects.toMatchObject({ code: 'AI_DATASET_EMPTY' })
   })
+
+  it('binds a chosen song limit, language and model identity to the authorization', async () => {
+    const fixture = createFixture(databases)
+    const preview = await fixture.service.preview({
+      profileId: 'profile-1',
+      source: { type: 'liked' },
+      requestedSongLimit: 20,
+      language: 'en-US'
+    })
+
+    expect(fixture.getDataset).toHaveBeenCalledWith({ type: 'liked' }, 20)
+    expect(preview).toMatchObject({ maximumSongCount: 20, reportLanguage: 'en-US' })
+    fixture.profiles.update({
+      ...fixture.profiles.findById('profile-1')!,
+      modelId: 'changed-model',
+      updatedAt: '2026-01-01T01:00:00.000Z'
+    })
+    expect(() =>
+      fixture.service.authorize({
+        previewId: preview.previewId,
+        confirmed: true,
+        remember: false
+      })
+    ).toThrowError(expect.objectContaining({ code: 'AI_DISCLOSURE_SCOPE_CHANGED' }))
+  })
 })
 
 function createFixture(
@@ -227,6 +253,7 @@ function datasetFixture(songCount: number): MusicAnalysisDataset {
 function scopeFromPreview(preview: AIDisclosurePreview): AIDisclosureAuthorizationScope {
   return {
     profileId: preview.profile.id,
+    modelId: preview.profile.modelId,
     targetOrigin: preview.targetOrigin,
     protocol: preview.protocol,
     sourceType: preview.source.type,
@@ -234,6 +261,7 @@ function scopeFromPreview(preview: AIDisclosurePreview): AIDisclosureAuthorizati
     fieldsHash: preview.fieldsHash,
     songCount: preview.songCount,
     maximumSongCount: preview.maximumSongCount,
+    reportLanguage: preview.reportLanguage,
     datasetDigest: preview.datasetDigest
   }
 }

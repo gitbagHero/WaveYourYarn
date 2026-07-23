@@ -9,6 +9,7 @@ import { NotFoundPage } from './pages/NotFoundPage'
 import { PlaylistsPage } from './pages/PlaylistsPage'
 import { PlaylistDetailPage } from './pages/PlaylistDetailPage'
 import { StatisticsPage } from './pages/StatisticsPage'
+import { AIReportsPage } from './pages/AIReportsPage'
 
 export const routes: RouteObject[] = [
   {
@@ -22,6 +23,7 @@ export const routes: RouteObject[] = [
       { path: 'playlists/:id', element: <PlaylistDetailPage /> },
       { path: 'export', element: <ExportPage /> },
       { path: 'statistics', element: <StatisticsPage /> },
+      { path: 'ai-reports', element: <AIReportsPage /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: '*', element: <NotFoundPage /> }
     ]

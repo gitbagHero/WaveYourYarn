@@ -9,6 +9,7 @@ import { JobRunRepository } from '../db/repositories/JobRunRepository'
 import { LLMProfileRepository } from '../db/repositories/LLMProfileRepository'
 import { SettingsRepository } from '../db/repositories/SettingsRepository'
 import { createTestDatabase } from '../db/testing/createTestDatabase'
+import type { StartAIReportGenerationRequest } from '../types/aiReport'
 import type { JobRun } from '../types/llm'
 import type { MusicAnalysisDataset } from '../types/statistics'
 import { AIDisclosureService, type AIDisclosureDatasetProvider } from './AIDisclosureService'
@@ -32,7 +33,10 @@ describe('AIReportGenerationService', () => {
     )
     const fixture = await createFixture(databases, requestSpy)
 
-    const created = await fixture.startAuthorized()
+    const created = await fixture.startAuthorized(undefined, {
+      requestedSongLimit: 50,
+      language: 'en-US'
+    })
     const completed = await waitForTerminal(fixture.jobs, created.id)
 
     expect(completed).toMatchObject({
@@ -43,9 +47,9 @@ describe('AIReportGenerationService', () => {
       inputSummary: {
         sourceType: 'liked',
         songCount: 1,
-        maximumSongCount: 100,
+        maximumSongCount: 50,
         datasetDigest: `sha256:${'a'.repeat(64)}`,
-        language: 'zh-CN'
+        language: 'en-US'
       }
     })
     expect(JSON.stringify(completed.inputSummary)).not.toContain('Song 1')
@@ -54,7 +58,7 @@ describe('AIReportGenerationService', () => {
       maxTokens: 5_000,
       responseFormat: 'json_object'
     })
-    expect(requestSpy.mock.calls[0]?.[0].messages[1]?.content).toContain('"reportLanguage":"zh-CN"')
+    expect(requestSpy.mock.calls[0]?.[0].messages[1]?.content).toContain('"reportLanguage":"en-US"')
 
     const report = fixture.reports.findByJobId(created.id)
     expect(report).toMatchObject({
@@ -73,6 +77,7 @@ describe('AIReportGenerationService', () => {
         reportId: report!.id,
         sourceType: 'liked',
         songIds: ['song-1'],
+        requestedSongLimit: 50,
         includedSongCount: 1,
         datasetDigest: report!.datasetDigest
       })
@@ -211,10 +216,17 @@ async function createFixture(
   })
 
   const dataset = datasetFixture()
+  const getAnalysisDataset = vi.fn<AIDisclosureDatasetProvider['getAnalysisDataset']>(
+    async (_source, requestedSongLimit = 100) => ({
+      ...dataset,
+      scope: {
+        ...dataset.scope,
+        requestedSongLimit
+      }
+    })
+  )
   const datasetProvider: AIDisclosureDatasetProvider = {
-    async getAnalysisDataset() {
-      return dataset
-    }
+    getAnalysisDataset
   }
   let disclosureId = 0
   const disclosure = new AIDisclosureService(
@@ -252,10 +264,14 @@ async function createFixture(
     manager,
     reports,
     sources,
-    async startAuthorized(retryOfJobId?: string): Promise<JobRun> {
+    async startAuthorized(
+      retryOfJobId?: string,
+      options: Pick<StartAIReportGenerationRequest, 'requestedSongLimit' | 'language'> = {}
+    ): Promise<JobRun> {
       const preview = await disclosure.preview({
         profileId: 'profile-1',
-        source: { type: 'liked' }
+        source: { type: 'liked' },
+        ...options
       })
       const authorization = disclosure.authorize({
         previewId: preview.previewId,
@@ -266,7 +282,8 @@ async function createFixture(
         profileId: 'profile-1',
         source: { type: 'liked' },
         authorizationToken: authorization.token,
-        retryOfJobId
+        ...(retryOfJobId ? { retryOfJobId } : {}),
+        ...options
       })
     }
   }

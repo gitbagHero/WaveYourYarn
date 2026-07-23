@@ -2,10 +2,14 @@ import { describe, expect, it } from 'vitest'
 import {
   parseAIDisclosureConfirmationMode,
   parseAIDisclosurePreviewRequest,
+  parseAIReportIdRequest,
+  parseAIReportJobIdRequest,
   parseAuthorizeAIDisclosureRequest,
   parseCreateLLMProfileRequest,
   parseLLMProfileIdRequest,
+  parseRenameAIReportRequest,
   parseSetLLMProfileApiKeyRequest,
+  parseStartAIReportGenerationRequest,
   parseUpdateLLMProfileRequest
 } from './llmValidators'
 
@@ -92,5 +96,42 @@ describe('LLM IPC validators', () => {
     ).toThrowError(expect.objectContaining({ code: 'AI_DISCLOSURE_INVALID' }))
     expect(parseAIDisclosureConfirmationMode({ confirmationMode: 'always' })).toBe('always')
     expect(() => parseAIDisclosureConfirmationMode({ confirmationMode: 'sometimes' })).toThrow()
+  })
+
+  it('accepts only bounded report generation and report artifact requests', () => {
+    expect(
+      parseStartAIReportGenerationRequest({
+        profileId: 'profile-1',
+        source: { type: 'playlist', playlistId: 'playlist-1' },
+        authorizationToken: 'authorization-1',
+        requestedSongLimit: 50,
+        language: 'en-US',
+        retryOfJobId: 'job-1'
+      })
+    ).toEqual({
+      profileId: 'profile-1',
+      source: { type: 'playlist', playlistId: 'playlist-1' },
+      authorizationToken: 'authorization-1',
+      requestedSongLimit: 50,
+      language: 'en-US',
+      retryOfJobId: 'job-1'
+    })
+    expect(parseAIReportIdRequest({ id: ' report-1 ' })).toEqual({ id: 'report-1' })
+    expect(parseAIReportJobIdRequest({ jobId: ' job-1 ' })).toEqual({ jobId: 'job-1' })
+    expect(parseRenameAIReportRequest({ id: 'report-1', userTitle: ' 新标题 ' })).toEqual({
+      id: 'report-1',
+      userTitle: '新标题'
+    })
+    expect(() =>
+      parseStartAIReportGenerationRequest({
+        profileId: 'profile-1',
+        source: { type: 'liked' },
+        authorizationToken: 'authorization-1',
+        prompt: 'smuggled prompt'
+      })
+    ).toThrowError(expect.objectContaining({ code: 'AI_REPORT_INVALID' }))
+    expect(() =>
+      parseRenameAIReportRequest({ id: 'report-1', userTitle: '', content: {} })
+    ).toThrow()
   })
 })

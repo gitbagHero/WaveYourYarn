@@ -152,6 +152,7 @@ test('production build exposes preload IPC and renders the primary routes', asyn
       { label: '歌单', hash: '#/playlists', heading: '我的歌单' },
       { label: '数据导出', hash: '#/export', heading: '数据导出' },
       { label: '数据统计', hash: '#/statistics', heading: '数据统计' },
+      { label: 'AI 音乐报告', hash: '#/ai-reports', heading: 'AI 音乐报告' },
       { label: '设置', hash: '#/settings', heading: '设置' }
     ]
 
@@ -180,6 +181,17 @@ test('production build exposes preload IPC and renders the primary routes', asyn
       success: true,
       data: { confirmationMode: 'allow_remembered', rememberedConsentCount: 0 }
     })
+    const reportHistoryResult = await window.evaluate(async () => {
+      const bridge = globalThis as typeof globalThis & {
+        waveYourYarn: {
+          aiReports: {
+            list: () => Promise<{ success: boolean; data?: unknown[] }>
+          }
+        }
+      }
+      return bridge.waveYourYarn.aiReports.list()
+    })
+    expect(reportHistoryResult).toEqual({ success: true, data: [] })
   } finally {
     await electronApp.close()
     await rm(userDataDir, { recursive: true, force: true })

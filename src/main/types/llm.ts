@@ -142,6 +142,8 @@ export interface AIDisclosureSourceRequest {
 export interface AIDisclosurePreviewRequest {
   profileId: string
   source: AIDisclosureSourceRequest
+  requestedSongLimit?: number
+  language?: string
 }
 
 export interface AIDisclosurePreview {
@@ -161,6 +163,7 @@ export interface AIDisclosurePreview {
   }
   songCount: number
   maximumSongCount: number
+  reportLanguage: string
   fields: AIDisclosureField[]
   fieldsHash: string
   datasetDigest: string

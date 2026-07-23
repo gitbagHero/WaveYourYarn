@@ -102,6 +102,14 @@ const browserFallbackApi: WaveYourYarnApi = {
     revokeRemembered: () => unavailable(),
     preview: () => unavailable(),
     authorize: () => unavailable()
+  },
+  aiReports: {
+    list: () => unavailable(),
+    get: () => unavailable(),
+    getByJob: () => unavailable(),
+    start: () => unavailable(),
+    rename: () => unavailable(),
+    delete: () => unavailable()
   }
 }
 

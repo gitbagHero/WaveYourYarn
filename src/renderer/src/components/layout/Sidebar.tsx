@@ -1,4 +1,13 @@
-import { BarChart3, Download, Heart, Home, ListMusic, LogIn, Settings } from 'lucide-react'
+import {
+  BarChart3,
+  Download,
+  Heart,
+  Home,
+  ListMusic,
+  LogIn,
+  Settings,
+  Sparkles
+} from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { APP_NAME } from '../../utils/constants'
 
@@ -9,6 +18,7 @@ const items = [
   { to: '/playlists', label: '歌单', icon: ListMusic },
   { to: '/export', label: '数据导出', icon: Download },
   { to: '/statistics', label: '数据统计', icon: BarChart3 },
+  { to: '/ai-reports', label: 'AI 音乐报告', icon: Sparkles },
   { to: '/settings', label: '设置', icon: Settings }
 ]
 

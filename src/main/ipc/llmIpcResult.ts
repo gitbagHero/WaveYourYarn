@@ -5,6 +5,7 @@ import { JobExecutionError } from '../services/JobManager'
 import { LLMProfileServiceError } from '../services/LLMProfileService'
 import { SecureStorageError } from '../services/SecureStorageService'
 import { AIDisclosureError } from '../services/AIDisclosureService'
+import { AIReportServiceError } from '../services/AIReportService'
 import { logger } from '../utils/logger'
 import { LLMIpcValidationError } from './llmValidators'
 
@@ -41,6 +42,9 @@ function toSafeLLMFailure(error: unknown): { message: string; error: string } {
     return { message: error.message, error: 'LLM_SECRET_UNAVAILABLE' }
   }
   if (error instanceof AIDisclosureError) {
+    return { message: error.message, error: error.code }
+  }
+  if (error instanceof AIReportServiceError) {
     return { message: error.message, error: error.code }
   }
   if (error instanceof LLMProviderError) {
