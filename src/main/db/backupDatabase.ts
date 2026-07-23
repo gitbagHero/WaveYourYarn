@@ -26,6 +26,7 @@ const BASE_REQUIRED_TABLES = [
   'schema_migrations'
 ]
 const SCHEMA_7_REQUIRED_TABLES = ['llm_profiles', 'job_runs', 'ai_disclosure_consents']
+const SCHEMA_8_REQUIRED_TABLES = ['ai_reports', 'ai_report_sources']
 export class SQLiteBackupDatabaseGateway implements BackupDatabaseGateway {
   async createSanitizedSnapshot(destinationPath: string): Promise<BackupDatabaseSummary> {
     await getDatabase().backup(destinationPath)
@@ -131,9 +132,13 @@ function assertRequiredTables(db: Database.Database, requiredTables: string[]): 
 }
 
 function requiredTablesForSchema(schemaVersion: number): string[] {
-  return schemaVersion >= 7
-    ? [...BASE_REQUIRED_TABLES, ...SCHEMA_7_REQUIRED_TABLES]
-    : BASE_REQUIRED_TABLES
+  if (schemaVersion >= 8) {
+    return [...BASE_REQUIRED_TABLES, ...SCHEMA_7_REQUIRED_TABLES, ...SCHEMA_8_REQUIRED_TABLES]
+  }
+  if (schemaVersion >= 7) {
+    return [...BASE_REQUIRED_TABLES, ...SCHEMA_7_REQUIRED_TABLES]
+  }
+  return BASE_REQUIRED_TABLES
 }
 
 function assertRelations(db: Database.Database): void {
@@ -150,6 +155,27 @@ function assertRelations(db: Database.Database): void {
   if (orphaned.count > 0) {
     throw new Error(`备份数据库包含 ${orphaned.count} 条孤立歌单歌曲关系`)
   }
+
+  if (hasTable(db, 'ai_report_sources')) {
+    const orphanedReportSources = db
+      .prepare(
+        `SELECT COUNT(*) AS count
+         FROM ai_report_sources
+         LEFT JOIN ai_reports ON ai_reports.id = ai_report_sources.report_id
+         WHERE ai_reports.id IS NULL`
+      )
+      .get() as { count: number }
+
+    if (orphanedReportSources.count > 0) {
+      throw new Error(`备份数据库包含 ${orphanedReportSources.count} 条孤立报告数据源`)
+    }
+  }
+}
+
+function hasTable(db: Database.Database, tableName: string): boolean {
+  return Boolean(
+    db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?").get(tableName)
+  )
 }
 
 function getSchemaVersion(db: Database.Database): number {

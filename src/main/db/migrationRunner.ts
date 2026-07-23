@@ -173,6 +173,107 @@ export const DATABASE_MIGRATIONS: DatabaseMigration[] = [
           ON ai_disclosure_consents (profile_id, updated_at DESC);
       `)
     }
+  },
+  {
+    version: 8,
+    name: 'ai reports and source snapshots',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE ai_reports (
+          id TEXT PRIMARY KEY,
+          job_id TEXT UNIQUE REFERENCES job_runs(id) ON DELETE SET NULL,
+          profile_id TEXT REFERENCES llm_profiles(id) ON DELETE SET NULL,
+          user_title TEXT NOT NULL CHECK (length(trim(user_title)) BETWEEN 1 AND 120),
+          status TEXT NOT NULL CHECK (status = 'succeeded'),
+          content_schema_version INTEGER NOT NULL CHECK (content_schema_version = 1),
+          protocol TEXT NOT NULL CHECK (length(trim(protocol)) > 0),
+          provider_origin TEXT NOT NULL CHECK (length(trim(provider_origin)) > 0),
+          model_id TEXT NOT NULL CHECK (length(trim(model_id)) > 0),
+          prompt_template_version INTEGER NOT NULL CHECK (prompt_template_version > 0),
+          dataset_digest TEXT NOT NULL CHECK (length(trim(dataset_digest)) > 0),
+          content_json TEXT NOT NULL CHECK (
+            json_valid(content_json)
+            AND json_type(content_json) = 'object'
+            AND json_type(content_json, '$.schemaVersion') = 'integer'
+            AND json_extract(content_json, '$.schemaVersion') = content_schema_version
+          ),
+          generated_at TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT
+        );
+
+        CREATE INDEX idx_ai_reports_active_generated
+          ON ai_reports (generated_at DESC, id DESC)
+          WHERE deleted_at IS NULL;
+        CREATE INDEX idx_ai_reports_dataset_digest
+          ON ai_reports (dataset_digest);
+        CREATE INDEX idx_ai_reports_profile_generated
+          ON ai_reports (profile_id, generated_at DESC);
+
+        CREATE TRIGGER trg_ai_reports_require_successful_job
+          BEFORE INSERT ON ai_reports
+          WHEN NEW.job_id IS NULL OR NOT EXISTS (
+            SELECT 1 FROM job_runs
+            WHERE id = NEW.job_id
+              AND kind = 'ai_report_generation'
+              AND status = 'succeeded'
+              AND profile_id = NEW.profile_id
+          )
+          BEGIN
+            SELECT RAISE(ABORT, 'AI report requires a matching successful generation job');
+          END;
+
+        CREATE TABLE ai_report_sources (
+          id TEXT PRIMARY KEY,
+          report_id TEXT NOT NULL REFERENCES ai_reports(id) ON DELETE CASCADE,
+          source_type TEXT NOT NULL CHECK (source_type IN ('liked', 'playlist', 'all')),
+          source_id TEXT,
+          source_name TEXT NOT NULL CHECK (length(trim(source_name)) > 0),
+          dataset_schema_version INTEGER NOT NULL CHECK (dataset_schema_version = 1),
+          selection TEXT NOT NULL CHECK (selection = 'most_recent'),
+          requested_song_limit INTEGER NOT NULL CHECK (requested_song_limit BETWEEN 1 AND 100),
+          available_song_count INTEGER NOT NULL CHECK (available_song_count >= 0),
+          included_song_count INTEGER NOT NULL CHECK (
+            included_song_count BETWEEN 1 AND requested_song_limit
+            AND included_song_count <= available_song_count
+          ),
+          truncated INTEGER NOT NULL CHECK (truncated IN (0, 1)),
+          time_precision TEXT NOT NULL CHECK (
+            time_precision IN ('source_timestamp', 'mixed', 'order_only', 'none')
+          ),
+          song_ids_json TEXT NOT NULL CHECK (
+            json_valid(song_ids_json)
+            AND json_type(song_ids_json) = 'array'
+            AND json_array_length(song_ids_json) = included_song_count
+          ),
+          summary_json TEXT NOT NULL CHECK (
+            json_valid(summary_json) AND json_type(summary_json) = 'object'
+          ),
+          dataset_digest TEXT NOT NULL CHECK (length(trim(dataset_digest)) > 0),
+          generated_at TEXT NOT NULL,
+          CHECK (
+            (source_type = 'playlist' AND source_id IS NOT NULL AND length(trim(source_id)) > 0)
+            OR (source_type IN ('liked', 'all') AND source_id IS NULL)
+          )
+        );
+
+        CREATE INDEX idx_ai_report_sources_report
+          ON ai_report_sources (report_id, generated_at DESC, id ASC);
+        CREATE INDEX idx_ai_report_sources_digest
+          ON ai_report_sources (dataset_digest);
+
+        CREATE TRIGGER trg_ai_report_sources_match_digest
+          BEFORE INSERT ON ai_report_sources
+          WHEN NOT EXISTS (
+            SELECT 1 FROM ai_reports
+            WHERE id = NEW.report_id AND dataset_digest = NEW.dataset_digest
+          )
+          BEGIN
+            SELECT RAISE(ABORT, 'AI report source digest does not match its report');
+          END;
+      `)
+    }
   }
 ]
 

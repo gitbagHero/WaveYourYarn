@@ -19,6 +19,7 @@
 - 增加 AI 数据披露预览与设置界面：显示目标域名、模型、歌曲数量和精确字段清单，并支持始终确认、记住同范围授权及一键撤销；
 - 增加 main-only 的短时单次披露 token，绑定 profile、目标、协议、来源、字段哈希、歌曲上限与 dataset digest，范围扩大后强制重新确认；
 - 修复 Node 原生请求在 DNS `all` lookup 模式下无法使用已校验固定地址的问题，恢复真实 LLM Profile 连接；
+- 固定 AI 报告 prompt template version，新增 schema 8 报告与来源快照、软删除 Repository，并确保清理音乐缓存或删除模型配置不会连带删除历史报告；
 
 ### 项目路线
 

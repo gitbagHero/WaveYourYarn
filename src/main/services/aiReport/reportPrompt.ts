@@ -1,7 +1,8 @@
-import type { AIReportFactsV1 } from '../../types/aiReport'
+import { AI_REPORT_PROMPT_TEMPLATE_VERSION, type AIReportFactsV1 } from '../../types/aiReport'
 import type { MusicAnalysisDataset } from '../../types/statistics'
 
 export interface AIReportPrompt {
+  templateVersion: typeof AI_REPORT_PROMPT_TEMPLATE_VERSION
   system: string
   user: string
 }
@@ -25,6 +26,7 @@ export function buildAIReportPrompt(
   }
 
   return {
+    templateVersion: AI_REPORT_PROMPT_TEMPLATE_VERSION,
     system: `你是音乐偏好报告编辑。你的任务是根据给定的最近收藏样本，生成可解释、克制且有趣的中文音乐偏好画像。
 
 严格规则：

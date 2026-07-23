@@ -1,4 +1,12 @@
+import type { LLMProtocol } from './llm'
+import type { AnalysisTimePrecision, MusicStatsSummary, StatisticsSourceType } from './statistics'
+
 export type AIReportConfidence = 'low' | 'medium' | 'high'
+
+export const AI_REPORT_CONTENT_SCHEMA_VERSION = 1 as const
+export const AI_REPORT_PROMPT_TEMPLATE_VERSION = 1 as const
+export const AI_REPORT_STATUSES = ['succeeded'] as const
+export type AIReportStatus = (typeof AI_REPORT_STATUSES)[number]
 
 export type AIReportDimensionKey =
   'exploration_familiarity' | 'focus_variety' | 'collection_rhythm' | 'emotional_texture'
@@ -21,7 +29,7 @@ export interface AIReportDimension extends AIReportInsight {
 }
 
 export interface AIReportContentV1 {
-  schemaVersion: 1
+  schemaVersion: typeof AI_REPORT_CONTENT_SCHEMA_VERSION
   title: string
   subtitle: string
   tasteSnapshot: {
@@ -42,7 +50,7 @@ export interface AIReportContentV1 {
 }
 
 export interface AIReportFactsV1 {
-  schemaVersion: 1
+  schemaVersion: typeof AI_REPORT_CONTENT_SCHEMA_VERSION
   sample: {
     songCount: number
     requestedSongLimit: number
@@ -69,4 +77,55 @@ export interface AIReportFactsV1 {
     earliestTime?: number
     latestTime?: number
   }
+}
+
+/**
+ * Immutable audit snapshot for one successfully generated report.
+ * Provider responses and API keys must never be stored in this record.
+ */
+export interface AIReportRecord {
+  id: string
+  jobId?: string
+  profileId?: string
+  userTitle: string
+  status: AIReportStatus
+  contentSchemaVersion: typeof AI_REPORT_CONTENT_SCHEMA_VERSION
+  protocol: LLMProtocol
+  providerOrigin: string
+  modelId: string
+  promptTemplateVersion: number
+  datasetDigest: string
+  content: AIReportContentV1
+  generatedAt: string
+  createdAt: string
+  updatedAt: string
+  deletedAt?: string
+}
+
+export type NewAIReportRecord = Omit<AIReportRecord, 'jobId' | 'profileId' | 'deletedAt'> & {
+  jobId: string
+  profileId: string
+}
+
+/**
+ * Local source snapshot used to explain and reproduce a report. Song IDs are
+ * copied as data and deliberately have no foreign key to the mutable cache.
+ */
+export interface AIReportSourceRecord {
+  id: string
+  reportId: string
+  sourceType: StatisticsSourceType
+  sourceId?: string
+  sourceName: string
+  datasetSchemaVersion: 1
+  selection: 'most_recent'
+  requestedSongLimit: number
+  availableSongCount: number
+  includedSongCount: number
+  truncated: boolean
+  timePrecision: AnalysisTimePrecision
+  songIds: string[]
+  summary: MusicStatsSummary
+  datasetDigest: string
+  generatedAt: string
 }

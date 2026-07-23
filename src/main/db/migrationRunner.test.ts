@@ -26,7 +26,7 @@ describe('database migrations', () => {
     expect(getAppliedMigrations(db).map((migration) => migration.version)).toEqual(
       DATABASE_MIGRATIONS.map((migration) => migration.version)
     )
-    expect(CURRENT_DATABASE_SCHEMA_VERSION).toBe(7)
+    expect(CURRENT_DATABASE_SCHEMA_VERSION).toBe(8)
     expect(DATABASE_MIGRATIONS.map(({ version, name }) => ({ version, name }))).toEqual([
       { version: 1, name: 'initial schema' },
       { version: 2, name: 'playlist song added time' },
@@ -34,14 +34,21 @@ describe('database migrations', () => {
       { version: 4, name: 'extended playlist metadata' },
       { version: 5, name: 'export record source metadata' },
       { version: 6, name: 'query indexes' },
-      { version: 7, name: 'llm profiles jobs and disclosure consents' }
+      { version: 7, name: 'llm profiles jobs and disclosure consents' },
+      { version: 8, name: 'ai reports and source snapshots' }
     ])
     expect(columnNames(db, 'playlist_songs')).toContain('added_at')
     expect(columnNames(db, 'export_records')).toEqual(
       expect.arrayContaining(['scope', 'sort_mode', 'source_type', 'source_id', 'source_name'])
     )
     expect(tableNames(db)).toEqual(
-      expect.arrayContaining(['llm_profiles', 'job_runs', 'ai_disclosure_consents'])
+      expect.arrayContaining([
+        'llm_profiles',
+        'job_runs',
+        'ai_disclosure_consents',
+        'ai_reports',
+        'ai_report_sources'
+      ])
     )
 
     runDatabaseMigrations(db)
@@ -113,7 +120,7 @@ describe('database migrations', () => {
     )
   })
 
-  it('upgrades a schema 6 database to schema 7 without changing existing data', () => {
+  it('upgrades a schema 6 database to the current schema without changing existing data', () => {
     const db = createBareTestDatabase()
     databases.push(db)
     const schemaSixMigrations = DATABASE_MIGRATIONS.filter(({ version }) => version <= 6)
@@ -129,10 +136,53 @@ describe('database migrations', () => {
     expect(db.prepare('SELECT name FROM songs WHERE id = ?').get('schema-6-song')).toEqual({
       name: 'Schema 6 song'
     })
-    expect(getAppliedMigrations(db).at(-1)?.version).toBe(7)
+    expect(getAppliedMigrations(db).at(-1)?.version).toBe(8)
     expect(tableNames(db)).toEqual(
-      expect.arrayContaining(['llm_profiles', 'job_runs', 'ai_disclosure_consents'])
+      expect.arrayContaining([
+        'llm_profiles',
+        'job_runs',
+        'ai_disclosure_consents',
+        'ai_reports',
+        'ai_report_sources'
+      ])
     )
+  })
+
+  it('upgrades schema 7 to schema 8 without changing LLM profiles or jobs', () => {
+    const db = createBareTestDatabase()
+    databases.push(db)
+    runDatabaseMigrations(
+      db,
+      DATABASE_MIGRATIONS.filter(({ version }) => version <= 7)
+    )
+    db.prepare(
+      `INSERT INTO llm_profiles (
+        id, name, protocol, base_url, model_id, timeout_ms, output_mode, language,
+        max_input_songs, secret_ref, is_active, created_at, updated_at
+      ) VALUES (
+        'profile-7', 'Schema 7 profile', 'openai_chat_completions',
+        'https://llm.example.test/v1', 'schema-7-model', 60000, 'json_object',
+        'zh-CN', 100, 'llm-profile:profile-7:api-key', 1, 'now', 'now'
+      )`
+    ).run()
+    db.prepare(
+      `INSERT INTO job_runs (
+        id, kind, profile_id, status, stage, input_summary_json, created_at
+      ) VALUES (
+        'job-7', 'ai_report_generation', 'profile-7', 'succeeded', 'completed', '{}', 'now'
+      )`
+    ).run()
+
+    runDatabaseMigrations(db)
+
+    expect(db.prepare('SELECT name FROM llm_profiles WHERE id = ?').get('profile-7')).toEqual({
+      name: 'Schema 7 profile'
+    })
+    expect(db.prepare('SELECT status FROM job_runs WHERE id = ?').get('job-7')).toEqual({
+      status: 'succeeded'
+    })
+    expect(getAppliedMigrations(db).at(-1)?.version).toBe(8)
+    expect(tableNames(db)).toEqual(expect.arrayContaining(['ai_reports', 'ai_report_sources']))
   })
 
   it('enforces profile, progress and disclosure ownership constraints', () => {
@@ -297,6 +347,8 @@ function tableNames(db: Database.Database): string[] {
 function createBareTestDatabase(): Database.Database {
   const db = createTestDatabase()
   db.exec(`
+    DROP TABLE ai_report_sources;
+    DROP TABLE ai_reports;
     DROP TABLE ai_disclosure_consents;
     DROP TABLE job_runs;
     DROP TABLE llm_profiles;
