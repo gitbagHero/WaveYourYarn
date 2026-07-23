@@ -1,7 +1,7 @@
 import { lookup } from 'node:dns/promises'
 import { request as requestHttp, type IncomingMessage, type RequestOptions } from 'node:http'
 import { request as requestHttps } from 'node:https'
-import { isIP } from 'node:net'
+import { isIP, type LookupFunction } from 'node:net'
 import {
   assertResolvedAddressAllowed,
   ExternalUrlPolicyError,
@@ -188,9 +188,7 @@ function defaultPinnedRequest(
       method: options.method,
       headers: options.headers,
       signal: options.signal,
-      lookup: (_hostname, _lookupOptions, callback) => {
-        callback(null, target.address, target.family)
-      }
+      lookup: createPinnedLookup(target)
     }
     const sendRequest = url.protocol === 'https:' ? requestHttps : requestHttp
     const request = sendRequest(url, requestOptions, (incoming) => {
@@ -199,6 +197,16 @@ function defaultPinnedRequest(
     request.once('error', reject)
     request.end(options.body)
   })
+}
+
+function createPinnedLookup(target: ResolvedTarget): LookupFunction {
+  return (_hostname, lookupOptions, callback) => {
+    if (lookupOptions.all) {
+      callback(null, [{ address: target.address, family: target.family }])
+      return
+    }
+    callback(null, target.address, target.family)
+  }
 }
 
 function collectResponse(incoming: IncomingMessage): Promise<Response> {

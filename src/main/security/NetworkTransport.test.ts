@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
+import { createServer } from 'node:http'
+import type { AddressInfo } from 'node:net'
 import { NetworkTransport, type PinnedRequestExecutor } from './NetworkTransport'
 
 const publicLookup = async (): Promise<Array<{ address: string; family: number }>> => [
@@ -6,6 +8,39 @@ const publicLookup = async (): Promise<Array<{ address: string; family: number }
 ]
 
 describe('NetworkTransport', () => {
+  it('uses the validated address with Node lookup all mode in the real request executor', async () => {
+    let requestedPath: string | undefined
+    const server = createServer((request, response) => {
+      requestedPath = request.url
+      response.writeHead(200, { 'Content-Type': 'text/plain' })
+      response.end('pinned-ok')
+    })
+    await new Promise<void>((resolve, reject) => {
+      server.once('error', reject)
+      server.listen(0, '127.0.0.1', resolve)
+    })
+
+    try {
+      const port = (server.address() as AddressInfo).port
+      const transport = new NetworkTransport(undefined, async () => [
+        { address: '127.0.0.1', family: 4 }
+      ])
+      const response = await transport.request(new URL(`http://localhost:${port}/pinned`), {
+        method: 'POST',
+        body: '{}',
+        timeoutMs: 1_000
+      })
+
+      expect(response.status).toBe(200)
+      expect(await response.text()).toBe('pinned-ok')
+      expect(requestedPath).toBe('/pinned')
+    } finally {
+      await new Promise<void>((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()))
+      })
+    }
+  })
+
   it('validates DNS and returns a non-redirect response', async () => {
     const requestMock = vi.fn<PinnedRequestExecutor>(async () =>
       Promise.resolve(new Response('ok', { status: 200 }))
